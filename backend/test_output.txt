@@ -1,0 +1,42 @@
+﻿=== KYC TESTING ===
+
+1. Logging in as test@ownly.com...
+   Status: 200
+   Message: Login successful
+   Token: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...
+
+2. Submit KYC WITHOUT token (should fail)...
+   Status: 401
+   Response: {"error":"No token provided"}
+
+3. Submit KYC WITH valid token...
+   Status: 200
+   Response: {
+  "message": "KYC submitted successfully",
+  "user": {
+    "id": 1,
+    "name": "Test User",
+    "email": "test@ownly.com",
+    "kyc_status": "SUBMITTED",
+    "id_proof_type": "AADHAAR",
+    "id_proof_number": "1234-5678-9012"
+  }
+}
+
+4. Admin verify KYC for user 1...
+   Status: 200
+   Response: {
+  "message": "KYC verified successfully",
+  "user": {
+    "id": 1,
+    "name": "Test User",
+    "email": "test@ownly.com",
+    "kyc_status": "VERIFIED"
+  }
+}
+
+5. Verify with invalid status (should fail)...
+   Status: 400
+   Response: {"error":"Invalid status"}
+
+=== ALL TESTS DONE ===

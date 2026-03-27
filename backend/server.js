@@ -15,7 +15,10 @@ db.query("SELECT NOW()")
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
+const kycRoutes = require("./routes/kyc");
+
 app.use(authRoutes);
+app.use("/kyc", kycRoutes);
 
 // Test route
 app.get("/test", (req, res) => {
