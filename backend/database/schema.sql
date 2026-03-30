@@ -5,7 +5,7 @@ CREATE TABLE users (
   email VARCHAR(100) UNIQUE NOT NULL,
   password TEXT NOT NULL,
   role VARCHAR(20) DEFAULT 'INVESTOR',
-  wallet_balance NUMERIC DEFAULT 100000,
+  wallet_balance NUMERIC DEFAULT 100000, -- it should be fetched from meta masked not predefine
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
