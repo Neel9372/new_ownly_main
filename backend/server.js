@@ -16,7 +16,9 @@ db.query("SELECT NOW()")
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const kycRoutes = require("./routes/kyc");
+const propertyRoutes = require("./routes/properties");
 
+app.use("/properties", propertyRoutes);
 app.use(authRoutes);
 app.use("/kyc", kycRoutes);
 
