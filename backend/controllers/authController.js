@@ -1,43 +1,50 @@
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const db = require("../db");
 
+// SIGNUP
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { fname, mname, lname, email, password, role } = req.body;
+
+    if (!fname || !lname || !email || !password) {
+      return res.status(400).json({ error: "Please fill all required fields" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await db.query(
-      `INSERT INTO users (name, email, password, role)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [name, email, hashedPassword, role || "INVESTOR"]
+      `INSERT INTO users (fname, mname, lname, email, password, role)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, fname, lname, email, role, kyc_status, wallet_status`,
+      [fname, mname || null, lname, email, hashedPassword, role || "INVESTOR"]
     );
 
     res.json({
-      message: "User registered successfully",
+      message: "Account created successfully",
       user: result.rows[0],
     });
 
   } catch (err) {
     console.error(err);
-
     if (err.code === "23505") {
       return res.status(400).json({ error: "Email already exists" });
     }
-
     res.status(500).json({ error: "Signup failed" });
   }
 };
 
+// LOGIN
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password required" });
+    }
+
     const result = await db.query(
-      `SELECT * FROM users WHERE email = $1`,
-      [email]
+      `SELECT * FROM users WHERE email = $1`, [email]
     );
 
     if (result.rows.length === 0) {
@@ -45,15 +52,12 @@ exports.login = async (req, res) => {
     }
 
     const user = result.rows[0];
-
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid password" });
     }
 
-    // Generate JWT token
-    const jwt = require("jsonwebtoken");
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET || "ownly_secret",
@@ -65,10 +69,12 @@ exports.login = async (req, res) => {
       token,
       user: {
         id: user.id,
-        name: user.name,
+        fname: user.fname,
+        lname: user.lname,
         email: user.email,
         role: user.role,
-        wallet_balance: user.wallet_balance,
+        wallet_status: user.wallet_status,
+        kyc_status: user.kyc_status,
       },
     });
 
@@ -78,33 +84,54 @@ exports.login = async (req, res) => {
   }
 };
 
-// Get all users
-exports.getAllUsers = async (req, res) => {
+// CONNECT WALLET
+exports.connectWallet = async (req, res) => {
   try {
+    const { wallet_address } = req.body;
+    const user_id = req.user.id;
+
+    if (!wallet_address) {
+      return res.status(400).json({ error: "Wallet address required" });
+    }
+
     const result = await db.query(
-      `SELECT id, name, email, role, wallet_balance, created_at FROM users`
+      `UPDATE users 
+       SET wallet_address = $1, wallet_status = 'CONNECTED'
+       WHERE id = $2
+       RETURNING id, fname, email, wallet_address, wallet_status`,
+      [wallet_address, user_id]
     );
-    res.json(result.rows);
+
+    res.json({
+      message: "Wallet connected successfully",
+      user: result.rows[0],
+    });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch users" });
+    if (err.code === "23505") {
+      return res.status(400).json({ error: "Wallet already linked to another account" });
+    }
+    res.status(500).json({ error: "Wallet connection failed" });
   }
 };
 
-// Get user by ID
-exports.getUserById = async (req, res) => {
+// GET CURRENT USER
+exports.getMe = async (req, res) => {
   try {
-    const { id } = req.params;
     const result = await db.query(
-      `SELECT id, name, email, role, wallet_balance, created_at FROM users WHERE id = $1`,
-      [id]
+      `SELECT id, fname, mname, lname, email, role, 
+              wallet_address, wallet_status, kyc_status, created_at
+       FROM users WHERE id = $1`,
+      [req.user.id]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json(result.rows[0]);
+    res.json({ user: result.rows[0] });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch user" });
