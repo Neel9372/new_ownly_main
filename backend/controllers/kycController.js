@@ -3,19 +3,34 @@ const db = require("../db");
 // User submits KYC
 exports.submitKYC = async (req, res) => {
   try {
-    const { id_proof_type, id_proof_number } = req.body;
-    const user_id = req.user.id; // comes from auth middleware
+    const user_id = req.user.id;
+    const { id_proof_type, id_proof_number, id_proof_image, selfie_image } = req.body;
+
+    if (!id_proof_type || !id_proof_number || !id_proof_image || !selfie_image) {
+      return res.status(400).json({ error: "All KYC fields are required" });
+    }
+
+    // Check wallet is connected first
+    const userCheck = await db.query(
+      `SELECT wallet_status FROM users WHERE id = $1`, [user_id]
+    );
+
+    if (userCheck.rows[0].wallet_status !== "CONNECTED") {
+      return res.status(400).json({ error: "Please connect your wallet before KYC" });
+    }
 
     const result = await db.query(
       `UPDATE users 
-       SET id_proof_type = $1, id_proof_number = $2, kyc_status = 'SUBMITTED'
-       WHERE id = $3
-       RETURNING id, name, email, kyc_status, id_proof_type, id_proof_number`,
-      [id_proof_type, id_proof_number, user_id]
+       SET id_proof_type = $1, id_proof_number = $2,
+           id_proof_image = $3, selfie_image = $4,
+           kyc_status = 'SUBMITTED'
+       WHERE id = $5
+       RETURNING id, fname, email, kyc_status`,
+      [id_proof_type, id_proof_number, id_proof_image, selfie_image, user_id]
     );
 
     res.json({
-      message: "KYC submitted successfully",
+      message: "KYC submitted successfully. Awaiting admin verification.",
       user: result.rows[0],
     });
 
@@ -25,21 +40,57 @@ exports.submitKYC = async (req, res) => {
   }
 };
 
-// Admin verifies KYC
+// Get KYC status
+exports.getKYCStatus = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, fname, email, kyc_status, id_proof_type 
+       FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+
+    res.json({ kyc: result.rows[0] });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch KYC status" });
+  }
+};
+
+// Admin - get all pending KYC
+exports.getPendingKYC = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, fname, lname, email, kyc_status, 
+              id_proof_type, id_proof_number, 
+              id_proof_image, selfie_image, created_at
+       FROM users 
+       WHERE kyc_status = 'SUBMITTED'
+       ORDER BY created_at ASC`
+    );
+
+    res.json({ pending_kyc: result.rows });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch pending KYC" });
+  }
+};
+
+// Admin - verify or reject KYC
 exports.verifyKYC = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // VERIFIED or REJECTED
+    const { status } = req.body;
 
     if (!["VERIFIED", "REJECTED"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
+      return res.status(400).json({ error: "Status must be VERIFIED or REJECTED" });
     }
 
     const result = await db.query(
-      `UPDATE users 
-       SET kyc_status = $1
+      `UPDATE users SET kyc_status = $1
        WHERE id = $2
-       RETURNING id, name, email, kyc_status`,
+       RETURNING id, fname, email, kyc_status`,
       [status, id]
     );
 
