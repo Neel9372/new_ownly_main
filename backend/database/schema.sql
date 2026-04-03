@@ -5,7 +5,7 @@ CREATE TABLE users (
   email VARCHAR(100) UNIQUE NOT NULL,
   password TEXT NOT NULL,
   role VARCHAR(20) DEFAULT 'INVESTOR',
-  wallet_balance NUMERIC DEFAULT 100000, -- it should be fetched from meta masked not predefine
+  wallet_balance NUMERIC DEFAULT 100000, -- it should be fetched from meta masked not
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE properties (
   building_age INTEGER,
   total_floors INTEGER,
   amenities TEXT[],
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
 );
 
 -- PROPERTY FINANCIALS
