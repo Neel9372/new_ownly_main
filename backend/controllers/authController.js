@@ -5,7 +5,10 @@ const db = require("../db");
 // SIGNUP
 exports.signup = async (req, res) => {
   try {
-    const { fname, mname, lname, email, password, role } = req.body;
+    const {
+      fname, mname, lname, email, password, role,
+      company_name, company_reg_id  // ← ADD THESE
+    } = req.body;
 
     if (!fname || !lname || !email || !password) {
       return res.status(400).json({ error: "Please fill all required fields" });
@@ -14,16 +17,14 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await db.query(
-      `INSERT INTO users (fname, mname, lname, email, password, role)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO users (fname, mname, lname, email, password, role, company_name, company_reg_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, fname, lname, email, role, kyc_status, wallet_status`,
-      [fname, mname || null, lname, email, hashedPassword, role || "INVESTOR"]
+      [fname, mname || null, lname, email, hashedPassword, role || "INVESTOR",
+        company_name || null, company_reg_id || null]  // ← ADD THESE
     );
 
-    res.json({
-      message: "Account created successfully",
-      user: result.rows[0],
-    });
+    res.json({ message: "Account created successfully", user: result.rows[0] });
 
   } catch (err) {
     console.error(err);
