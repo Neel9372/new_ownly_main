@@ -1,0 +1,70 @@
+﻿[dotenv@17.3.1] injecting env (8) from ..\.env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+node : C:\Users\Neel 
+Dharmesh Parekh\OneDrive\D
+esktop\OWNLY\backend\node_
+modules\router\lib\route.j
+s:228
+At line:1 char:1
++ node server.js 2>&1 | 
+Out-File -Encoding utf8 
+error_log.txt; Get-Cont 
+...
++ ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (C  
+  :\Users\Neel D...ib\r   
+ oute.js:228:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+        throw new 
+TypeError('argument 
+handler must be a 
+function')
+        ^
+
+TypeError: argument 
+handler must be a function
+    at Route.<computed> 
+[as post] (C:\Users\Neel 
+Dharmesh Parekh\OneDrive\D
+esktop\OWNLY\backend\node_
+modules\router\lib\route.j
+s:228:15)
+    at Router.<computed> 
+[as post] (C:\Users\Neel 
+Dharmesh Parekh\OneDrive\D
+esktop\OWNLY\backend\node_
+modules\router\index.js:44
+8:19)
+    at Object.<anonymous> 
+(C:\Users\Neel Dharmesh Pa
+rekh\OneDrive\Desktop\OWNL
+Y\backend\routes\builder.j
+s:17:8)
+    at Module._compile (no
+de:internal/modules/cjs/lo
+ader:1706:14)
+    at Object..js (node:in
+ternal/modules/cjs/loader:
+1839:10)
+    at Module.load (node:i
+nternal/modules/cjs/loader
+:1441:32)
+    at Function._load (nod
+e:internal/modules/cjs/loa
+der:1263:12)
+    at 
+TracingChannel.traceSync (
+node:diagnostics_channel:3
+22:14)
+    at wrapModuleLoad (nod
+e:internal/modules/cjs/loa
+der:237:24)
+    at Module.require (nod
+e:internal/modules/cjs/loa
+der:1463:12)
+
+Node.js v22.20.0

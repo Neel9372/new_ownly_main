@@ -17,15 +17,23 @@ db.query("SELECT NOW()")
 const authRoutes = require("./routes/authRoutes");
 const kycRoutes = require("./routes/kyc");
 const propertyRoutes = require("./routes/properties");
+const builderRoutes = require("./routes/builder");
 
-app.use("/properties", propertyRoutes);
 app.use(authRoutes);
 app.use("/kyc", kycRoutes);
+app.use("/properties", propertyRoutes);
+app.use("/builder", builderRoutes);
 
 // Test route
 app.get("/test", (req, res) => {
   res.json({ message: "API working" });
 });
+
+const investmentRoutes = require("./routes/investments");
+app.use("/investments", investmentRoutes);
+
+const rentalRoutes = require("./routes/rental");
+app.use("/rental", rentalRoutes);
 
 // Start server
 app.listen(5000, () => {
