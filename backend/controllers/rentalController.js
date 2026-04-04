@@ -13,6 +13,13 @@ exports.distributeRental = async (req, res) => {
             return res.status(400).json({ error: "All fields are required" });
         }
 
+        if (isNaN(total_rental_amount) || total_rental_amount <= 0) {
+            return res.status(400).json({ error: "total_rental_amount must be a positive number" });
+        }
+        if (!Number.isInteger(Number(year)) || year < 2000 || year > 2100) {
+            return res.status(400).json({ error: "year must be a valid number e.g. 2024" });
+        }
+
         // 1. Check property exists
         const propertyCheck = await client.query(
             `SELECT p.*, pf.total_tokens

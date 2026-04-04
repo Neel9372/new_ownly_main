@@ -313,26 +313,39 @@ exports.reviewProject = async (req, res) => {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    // If approved, automatically create property listing
-    if (status === "APPROVED") {
-      const project = result.rows[0];
+// If approved, automatically create property listing
+if (status === "APPROVED") {
+  const project = result.rows[0];
 
-      await db.query(
-        `INSERT INTO properties (
-          title, property_type, location,
-          source, builder_project_id, listed_by,
-          status, rera_id
-        ) VALUES ($1,$2,$3,'BUILDER',$4,$5,'AVAILABLE',$6)`,
-        [
-          project.title,
-          project.property_type,
-          project.location,
-          project.id,
-          admin_id,
-          null
-        ]
-      );
-    }
+  // Create property
+  const newProperty = await db.query(
+    `INSERT INTO properties (
+      title, property_type, location,
+      source, builder_project_id, listed_by,
+      status, rera_id
+    ) VALUES ($1,$2,$3,'BUILDER',$4,$5,'AVAILABLE',$6)
+    RETURNING id`,                                          // ← added RETURNING id
+    [
+      project.title,
+      project.property_type,
+      project.location,
+      project.id,
+      admin_id,
+      null
+    ]
+  );
+
+  // Create funding data so investors can buy tokens  ← THIS IS THE NEW PART
+  const property_id = newProperty.rows[0].id;
+  await db.query(
+    `INSERT INTO property_funding (
+      property_id, total_tokens, token_price,
+      total_tokens_remaining, funded_amount,
+      funding_percentage, investor_count
+    ) VALUES ($1, $2, $3, $2, 0, 0, 0)`,
+    [property_id, project.total_tokens, project.token_price]
+  );
+}
 
     res.json({
       message: `Project ${status.toLowerCase()} successfully`,

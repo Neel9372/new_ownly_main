@@ -10,6 +10,14 @@ exports.investInProperty = async (req, res) => {
     const user_id = req.user.id;
     const { property_id, tokens_to_buy, transaction_hash } = req.body;
 
+    // Validate inputs
+if (!property_id || !tokens_to_buy || !transaction_hash) {
+  return res.status(400).json({ error: "property_id, tokens_to_buy and transaction_hash are required" });
+}
+if (!Number.isInteger(tokens_to_buy) || tokens_to_buy <= 0) {
+  return res.status(400).json({ error: "tokens_to_buy must be a positive whole number" });
+}
+
     // 1. Check user KYC is verified
     const userCheck = await client.query(
       `SELECT kyc_status, wallet_status FROM users WHERE id = $1`,

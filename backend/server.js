@@ -1,5 +1,9 @@
+require("dotenv").config({ path: "../.env" });  // ← ADD THIS AS LINE 1
+
 const express = require("express");
 const cors = require("cors");
+
+if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set in .env");
 
 const app = express();
 
