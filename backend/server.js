@@ -18,22 +18,20 @@ const authRoutes = require("./routes/authRoutes");
 const kycRoutes = require("./routes/kyc");
 const propertyRoutes = require("./routes/properties");
 const builderRoutes = require("./routes/builder");
+const investmentRoutes = require("./routes/investments");
+const rentalRoutes = require("./routes/rental");
 
 app.use(authRoutes);
 app.use("/kyc", kycRoutes);
 app.use("/properties", propertyRoutes);
 app.use("/builder", builderRoutes);
+app.use("/investments", investmentRoutes);
+app.use("/rental", rentalRoutes);
 
 // Test route
 app.get("/test", (req, res) => {
   res.json({ message: "API working" });
 });
-
-const investmentRoutes = require("./routes/investments");
-app.use("/investments", investmentRoutes);
-
-const rentalRoutes = require("./routes/rental");
-app.use("/rental", rentalRoutes);
 
 // Start server
 app.listen(5000, () => {
