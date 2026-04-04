@@ -17,6 +17,12 @@ CREATE TABLE users (
     builder_status VARCHAR(20) DEFAULT 'NOT_APPLICABLE',
     -- NOT_APPLICABLE / PENDING / VERIFIED / REJECTED
 
+    -- Builder extra info
+    rera_number VARCHAR(100),
+    gst_number VARCHAR(100),
+    website TEXT,
+    portfolio_url TEXT,
+
     -- Wallet
     wallet_address VARCHAR(255) UNIQUE,
     wallet_status VARCHAR(20) DEFAULT 'NOT_CONNECTED',
@@ -27,10 +33,10 @@ CREATE TABLE users (
     id_proof_image TEXT,
     selfie_image TEXT,
     kyc_status VARCHAR(20) DEFAULT 'NOT_SUBMITTED',
+    -- NOT_SUBMITTED / SUBMITTED / VERIFIED / REJECTED
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 
 -- =====================
 -- PROPERTIES TABLE
@@ -39,15 +45,23 @@ CREATE TABLE properties (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255),
     property_type VARCHAR(100),
-    status VARCHAR(50) DEFAULT 'Available', --meaning available, funded, exited
+    status VARCHAR(50) DEFAULT 'AVAILABLE',
+    -- AVAILABLE / FUNDED / EXITED / UNDER_MAINTENANCE
     size_sqft NUMERIC,
     location VARCHAR(255),
     developer VARCHAR(255),
     building_age INT,
     total_floors INT,
     amenities TEXT,
-    
-    Rera_id VARCHAR(100) UNIQUE NOT NULL,
+    rera_id VARCHAR(100) UNIQUE,
+    -- nullable because builder projects may not have it initially
+
+    -- Source tracking
+    source VARCHAR(50) DEFAULT 'ADMIN',
+    -- ADMIN / BUILDER
+    builder_project_id INT,
+    listed_by INT,
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -58,13 +72,18 @@ CREATE TABLE property_financials (
     id SERIAL PRIMARY KEY,
     property_id INT REFERENCES properties(id) ON DELETE CASCADE,
     property_price NUMERIC,
-    transaction_costs NUMERIC,-- Stamp duty + registration + legal fees + platform fee 
-    total_investment_cost NUMERIC, --property price + Transaction cost
+    transaction_costs NUMERIC,
+    -- Stamp duty + registration + legal fees + platform fee
+    total_investment_cost NUMERIC,
+    -- property_price + transaction_costs
     price_per_sqft NUMERIC,
-    gross_yield NUMERIC, -- annual rent/total investment cost x 100
-    net_yield NUMERIC, --gross yield - expenses
+    gross_yield NUMERIC,
+    -- annual rent / total investment cost x 100
+    net_yield NUMERIC,
+    -- gross yield - expenses
     annual_appreciation NUMERIC,
-    predicted_roi NUMERIC --ML GA ALgo (%)
+    predicted_roi NUMERIC
+    -- ML Genetic Algorithm output (%)
 );
 
 -- =====================
@@ -74,12 +93,15 @@ CREATE TABLE property_funding (
     id SERIAL PRIMARY KEY,
     property_id INT REFERENCES properties(id) ON DELETE CASCADE,
     total_tokens INT,
-    token_price NUMERIC, --price per token NAV based
-    funded_amount NUMERIC DEFAULT 0, --total_tokens * token_price
-    funding_percentage NUMERIC DEFAULT 0, --funded_amount/total_tokens * 100
+    token_price NUMERIC,
+    -- price per token NAV based
+    funded_amount NUMERIC DEFAULT 0,
+    -- total_tokens_sold * token_price
+    funding_percentage NUMERIC DEFAULT 0,
+    -- funded_amount / total_funding_goal * 100
     investor_count INT DEFAULT 0,
     funding_closing_date DATE,
-    current_valuation NUMERIC, --total_tokens * token_price
+    current_valuation NUMERIC,
     total_tokens_sold NUMERIC DEFAULT 0,
     total_tokens_remaining NUMERIC DEFAULT 0
 );
@@ -91,12 +113,14 @@ CREATE TABLE property_leasing (
     id SERIAL PRIMARY KEY,
     property_id INT REFERENCES properties(id) ON DELETE CASCADE,
     leasing_strategy VARCHAR(100),
+    -- Long-term / Short-term / Holiday rental
     occupancy_rate NUMERIC,
     projected_annual_rent NUMERIC,
     rental_payment_schedule DATE,
     total_rent_received NUMERIC DEFAULT 0,
     total_rent_distributed NUMERIC DEFAULT 0,
-    property_manager VARCHAR(255),-- who manages property third party
+    property_manager VARCHAR(255),
+    -- third party who manages property
     property_manager_fee NUMERIC
 );
 
@@ -108,8 +132,8 @@ CREATE TABLE property_media (
     property_id INT REFERENCES properties(id) ON DELETE CASCADE,
     image_url TEXT,
     document_url TEXT,
-    investment_tag VARCHAR(100) -- for marketing purpose (high yield, vlaue, long term) 
-    -- to ask claude how this works?? 
+    investment_tag VARCHAR(100)
+    -- High Yield / Value Add / Long Term / Pre-Construction
 );
 
 -- =====================
@@ -129,9 +153,10 @@ CREATE TABLE builder_projects (
     expected_completion DATE,
     total_tokens INT,
     token_price NUMERIC,
-    status VARCHAR(50) DEFAULT 'PENDING', --pending, approved, rejected
-    rejection_reason TEXT, --admin reason to reject
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP--when project is created
+    status VARCHAR(50) DEFAULT 'PENDING',
+    -- PENDING / APPROVED / REJECTED / LIVE / COMPLETED
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =====================
@@ -142,10 +167,12 @@ CREATE TABLE project_milestones (
     project_id INT REFERENCES builder_projects(id),
     milestone_name VARCHAR(255),
     description TEXT,
-    funding_percentage NUMERIC, --percentage of total funding goal which is been released till date 
-    due_date DATE, --when milestone is due
-    status VARCHAR(50) DEFAULT 'PENDING', --pending, approved, rejected
-    completed_at TIMESTAMP --to ask claude how funding timeline logic work like will it be pre defined or what??
+    funding_percentage NUMERIC,
+    -- % of total funding released at this milestone
+    due_date DATE,
+    status VARCHAR(50) DEFAULT 'PENDING',
+    -- PENDING / COMPLETED
+    completed_at TIMESTAMP
 );
 
 -- =====================
@@ -154,7 +181,8 @@ CREATE TABLE project_milestones (
 CREATE TABLE project_documents (
     id SERIAL PRIMARY KEY,
     project_id INT REFERENCES builder_projects(id),
-    document_type VARCHAR(100), -- rera certificate, oc, cc, title deed, architecture layout, GST cert.
+    document_type VARCHAR(100),
+    -- RERA_CERT / OC / CC / TITLE_DEED / LAYOUT / GST_CERT
     document_url TEXT,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -181,8 +209,10 @@ CREATE TABLE transactions (
     property_id INT REFERENCES properties(id),
     amount NUMERIC,
     type VARCHAR(20),
+    -- INVEST / RENTAL / WITHDRAW
     transaction_hash VARCHAR(255),
-    status VARCHAR(20) DEFAULT 'PENDING', --pending, approved, rejected
+    status VARCHAR(20) DEFAULT 'PENDING',
+    -- PENDING / SUCCESS / FAILED
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -191,7 +221,7 @@ CREATE TABLE transactions (
 -- =====================
 CREATE TABLE builder_verifications (
     id SERIAL PRIMARY KEY,
-    builder_id INT REFERENCES users(id) ON DELETE CASCADE,
+    builder_id INT REFERENCES users(id) ON DELETE CASCADE UNIQUE,
 
     -- Layer 1: Documents
     gst_certificate_url TEXT,
@@ -224,15 +254,14 @@ CREATE TABLE builder_verifications (
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- =====================
+-- RENTAL DISTRIBUTIONS
+-- =====================
 CREATE TABLE rental_distributions (
     id SERIAL PRIMARY KEY,
     property_id INT REFERENCES properties(id),
     total_rental_amount NUMERIC,
-    distributed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     month VARCHAR(20),
-    year INT
+    year INT,
+    distributed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
-
-

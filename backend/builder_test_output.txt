@@ -1,0 +1,288 @@
+﻿================================================
+   OWNLY BUILDER API - FULL TEST SUITE
+================================================
+
+✅ 1. SIGNUP Builder
+   Status: 200
+   Response: {
+     "message": "Account created successfully",
+     "user": {
+       "id": 4,
+       "fname": "Rahul",
+       "lname": "Sharma",
+       "email": "builder_1775299332823@ownly.com",
+       "role": "BUILDER",
+       "kyc_status": "NOT_SUBMITTED",
+       "wallet_status": "NOT_CONNECTED"
+     }
+   }
+
+✅ 2. SIGNUP Admin
+   Status: 200
+   Response: {
+     "message": "Account created successfully",
+     "user": {
+       "id": 5,
+       "fname": "Admin",
+       "lname": "User",
+       "email": "admin_1775299332823@ownly.com",
+       "role": "ADMIN",
+       "kyc_status": "NOT_SUBMITTED",
+       "wallet_status": "NOT_CONNECTED"
+     }
+   }
+
+✅ 3. LOGIN Builder
+   Status: 200
+   Response: {
+     "message": "Login successful",
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwicm9sZSI6IkJVSUxERVIiLCJpYXQiOjE3NzUyOTkzMzMsImV4cCI6MTc3NTkwNDEzM30.I34F7nYONhEiHNxvyppcPkHvJytvUtjsZUcqcnicxuA",
+     "user": {
+       "id": 4,
+       "fname": "Rahul",
+       "lname": "Sharma",
+       "email": "builder_1775299332823@ownly.com",
+       "role": "BUILDER",
+       "wallet_status": "NOT_CONNECTED",
+       "kyc_status": "NOT_SUBMITTED"
+     }
+   }
+
+✅ 4. LOGIN Admin
+   Status: 200
+   Response: {
+     "message": "Login successful",
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzc1Mjk5MzMzLCJleHAiOjE3NzU5MDQxMzN9.F2rl6G4ZXIMAj2xVlgytQrhGwW8QsAU8mX4yBQ5ZA20",
+     "user": {
+       "id": 5,
+       "fname": "Admin",
+       "lname": "User",
+       "email": "admin_1775299332823@ownly.com",
+       "role": "ADMIN",
+       "wallet_status": "NOT_CONNECTED",
+       "kyc_status": "NOT_SUBMITTED"
+     }
+   }
+
+✅ 5. SUBMIT VERIFICATION (Builder)
+   Status: 200
+   Response: {
+     "message": "Verification submitted. Awaiting admin review.",
+     "builder": {
+       "id": 4,
+       "fname": "Rahul",
+       "lname": "Sharma",
+       "email": "builder_1775299332823@ownly.com",
+       "company_name": "Sharma Constructions Pvt Ltd",
+       "rera_number": "RERA-MH-2026-001",
+       "builder_status": "PENDING"
+     }
+   }
+
+✅ 6. GET PENDING BUILDERS (Admin)
+   Status: 200
+   Response: {
+     "pending_builders": [
+       {
+         "id": 4,
+         "fname": "Rahul",
+         "lname": "Sharma",
+         "email": "builder_1775299332823@ownly.com",
+         "company_name": "Sharma Constructions Pvt Ltd",
+         "rera_number": "RERA-MH-2026-001",
+         "gst_number": "27AABCS1234F1Z5",
+         "website": "https://sharmaconstruction.com",
+         "portfolio_url": "https://sharmaconstruction.com/portfolio",
+         "builder_status": "PENDING",
+         "created_at": "2026-04-04T10:42:13.039Z"
+       }
+     ]
+   }
+
+✅ 7. APPROVE BUILDER (Admin)
+   Status: 200
+   Response: {
+     "message": "Builder verified successfully",
+     "builder": {
+       "id": 4,
+       "fname": "Rahul",
+       "lname": "Sharma",
+       "email": "builder_1775299332823@ownly.com",
+       "company_name": "Sharma Constructions Pvt Ltd",
+       "builder_status": "VERIFIED"
+     }
+   }
+
+✅ 8. SUBMIT PROJECT (Verified Builder)
+   Status: 200
+   Response: {
+     "message": "Project submitted successfully. Awaiting admin approval.",
+     "project": {
+       "id": 2,
+       "builder_id": 4,
+       "title": "Skyline Towers - Phase 1",
+       "property_type": "Residential",
+       "location": "Bandra West, Mumbai",
+       "description": "Premium 3BHK apartments with sea view",
+       "total_funding_goal": "50000000",
+       "funded_amount": "0",
+       "funding_deadline": "2026-09-29T18:30:00.000Z",
+       "construction_start": "2026-05-31T18:30:00.000Z",
+       "expected_completion": "2028-12-30T18:30:00.000Z",
+       "total_tokens": 5000,
+       "token_price": "10000",
+       "status": "PENDING",
+       "rejection_reason": null,
+       "created_at": "2026-04-04T10:42:13.422Z"
+     }
+   }
+
+⚠️ 9. SUBMIT PROJECT (Unverified - should FAIL)
+   Status: 403
+   Response: {
+     "error": "Your account must be verified by admin before submitting projects"
+   }
+
+✅ 10. UPLOAD DOCUMENT
+   Status: 200
+   Response: {
+     "message": "Document uploaded successfully",
+     "document": {
+       "id": 2,
+       "project_id": 2,
+       "document_type": "RERA Certificate",
+       "document_url": "https://storage.ownly.com/docs/rera-cert.pdf",
+       "uploaded_at": "2026-04-04T10:42:13.595Z"
+     }
+   }
+
+✅ 11. ADD MILESTONE 1 (25%)
+   Status: 200
+   Response: {
+     "message": "Milestone added successfully",
+     "milestone": {
+       "id": 3,
+       "project_id": 2,
+       "milestone_name": "Foundation Complete",
+       "description": "Foundation and basement work done",
+       "funding_percentage": "25",
+       "due_date": "2026-12-30T18:30:00.000Z",
+       "status": "PENDING",
+       "completed_at": null
+     }
+   }
+
+✅ 12. ADD MILESTONE 2 (35%)
+   Status: 200
+   Response: {
+     "message": "Milestone added successfully",
+     "milestone": {
+       "id": 4,
+       "project_id": 2,
+       "milestone_name": "Structure Complete",
+       "description": "RCC structure completed",
+       "funding_percentage": "35",
+       "due_date": "2027-06-29T18:30:00.000Z",
+       "status": "PENDING",
+       "completed_at": null
+     }
+   }
+
+⚠️ 13. ADD MILESTONE EXCEEDING 100% (should FAIL)
+   Status: 400
+   Response: {
+     "error": "Total milestone percentage cannot exceed 100%. Currently at 60%"
+   }
+
+✅ 14. GET MY PROJECTS (Builder)
+   Status: 200
+   Response: {
+     "projects": [
+       {
+         "id": 2,
+         "builder_id": 4,
+         "title": "Skyline Towers - Phase 1",
+         "property_type": "Residential",
+         "location": "Bandra West, Mumbai",
+         "description": "Premium 3BHK apartments with sea view",
+         "total_funding_goal": "50000000",
+         "funded_amount": "0",
+         "funding_deadline": "2026-09-29T18:30:00.000Z",
+         "construction_start": "2026-05-31T18:30:00.000Z",
+         "expected_completion": "2028-12-30T18:30:00.000Z",
+         "total_tokens": 5000,
+         "token_price": "10000",
+         "status": "PENDING",
+         "rejection_reason": null,
+         "created_at": "2026-04-04T10:42:13.422Z",
+         "document_count": "1",
+         "milestone_count": "2"
+       }
+     ]
+   }
+
+✅ 15. GET PENDING PROJECTS (Admin)
+   Status: 200
+   Response: {
+     "pending_projects": [
+       {
+         "id": 2,
+         "builder_id": 4,
+         "title": "Skyline Towers - Phase 1",
+         "property_type": "Residential",
+         "location": "Bandra West, Mumbai",
+         "description": "Premium 3BHK apartments with sea view",
+         "total_funding_goal": "50000000",
+         "funded_amount": "0",
+         "funding_deadline": "2026-09-29T18:30:00.000Z",
+         "construction_start": "2026-05-31T18:30:00.000Z",
+         "expected_completion": "2028-12-30T18:30:00.000Z",
+         "total_tokens": 5000,
+         "token_price": "10000",
+         "status": "PENDING",
+         "rejection_reason": null,
+         "created_at": "2026-04-04T10:42:13.422Z",
+         "fname": "Rahul",
+         "lname": "Sharma",
+         "email": "builder_1775299332823@ownly.com",
+         "company_name": "Sharma Constructions Pvt Ltd",
+         "document_count": "1",
+         "milestone_count": "2"
+       }
+     ]
+   }
+
+✅ 16. APPROVE PROJECT (Admin)
+   Status: 200
+   Response: {
+     "message": "Project approved successfully",
+     "project": {
+       "id": 2,
+       "builder_id": 4,
+       "title": "Skyline Towers - Phase 1",
+       "property_type": "Residential",
+       "location": "Bandra West, Mumbai",
+       "description": "Premium 3BHK apartments with sea view",
+       "total_funding_goal": "50000000",
+       "funded_amount": "0",
+       "funding_deadline": "2026-09-29T18:30:00.000Z",
+       "construction_start": "2026-05-31T18:30:00.000Z",
+       "expected_completion": "2028-12-30T18:30:00.000Z",
+       "total_tokens": 5000,
+       "token_price": "10000",
+       "status": "APPROVED",
+       "rejection_reason": null,
+       "created_at": "2026-04-04T10:42:13.422Z"
+     }
+   }
+
+⚠️ 17. WITHOUT TOKEN (should get 401)
+   Status: 401
+   Response: {
+     "error": "No token provided"
+   }
+
+================================================
+   ALL 17 BUILDER TESTS COMPLETED!
+================================================
+
