@@ -12,9 +12,7 @@ contract OwnlyValuation {
         uint256 currentValue;       // Latest ML predicted value
         uint256 initialValue;       // Original value at listing
         uint256 lastUpdated;        // Timestamp of last update
-        uint256 totalRentCollected; // Total rent received so far
-        uint256 platformFeeRate;    // e.g. 200 = 2%
-        uint256 mgmtFeeRate;        // e.g. 100 = 1%
+        uint256 platformFeeRate;    // e.g. 200 = 2% (charged separately)
         bool exists;
     }
 
@@ -83,24 +81,29 @@ contract OwnlyValuation {
         uint256 dbPropertyId,
         uint256 initialValue,
         uint256 _totalTokens,
-        uint256 _platformFeeRate,
-        uint256 _mgmtFeeRate
+        uint256 _platformFeeRate
+        // NOTE: mgmtFeeRate REMOVED
+        // Management fee charged separately
+        // NOT deducted from NAV
     ) external onlyAdminOrProperty {
         require(!valuations[propertyId].exists, "Already initialized");
+        require(initialValue > 0, "Value must be greater than 0");
 
         valuations[propertyId] = PropertyValuation({
             dbPropertyId: dbPropertyId,
             currentValue: initialValue,
             initialValue: initialValue,
             lastUpdated: block.timestamp,
-            totalRentCollected: 0,
             platformFeeRate: _platformFeeRate,
-            mgmtFeeRate: _mgmtFeeRate,
             exists: true
         });
 
         totalTokens[propertyId] = _totalTokens;
-        _recordNAV(propertyId);
+
+        // Only record NAV if tokens exist
+        if (_totalTokens > 0) {
+            _recordNAV(propertyId);
+        }
     }
 
     // ─── Update Functions ─────────────────────────────────
@@ -118,7 +121,10 @@ contract OwnlyValuation {
         valuations[propertyId].currentValue = newValue;
         valuations[propertyId].lastUpdated = block.timestamp;
 
-        _recordNAV(propertyId);
+        // Only record if tokens exist
+        if (totalTokens[propertyId] > 0) {
+            _recordNAV(propertyId);
+        }
 
         emit PropertyValueUpdated(
             propertyId,
@@ -128,68 +134,65 @@ contract OwnlyValuation {
         );
     }
 
-    function updateRentCollected(
-        uint256 propertyId,
-        uint256 rentAmount
-    ) external onlyAdminOrProperty {
-        require(valuations[propertyId].exists, "Property not found");
-        valuations[propertyId].totalRentCollected += rentAmount;
-        _recordNAV(propertyId);
-    }
-
     function updateTotalTokens(
         uint256 propertyId,
         uint256 newTotal
     ) external onlyAdminOrProperty {
+        require(valuations[propertyId].exists, "Property not found");
         totalTokens[propertyId] = newTotal;
+
+        // Record NAV now that tokens exist
+        if (newTotal > 0) {
+            _recordNAV(propertyId);
+        }
     }
 
     // ─── NAV Calculation ──────────────────────────────────
 
+    // NAV = Property Value ÷ Total Tokens
+    // Simple and clean — no fees, no rent
+    // Fees charged separately on investment
+    // Rent handled in separate claimable pool
     function calculateNAV(uint256 propertyId)
-    public
-    view
-    returns (uint256)
-{
-    require(valuations[propertyId].exists, "Property not found");
+        public
+        view
+        returns (uint256)
+    {
+        require(valuations[propertyId].exists, "Property not found");
 
-    // Return current value if no tokens yet
-    if (totalTokens[propertyId] == 0) {
-        return valuations[propertyId].currentValue;
+        // Return full current value if no tokens yet
+        // This is the initial token price before any investment
+        if (totalTokens[propertyId] == 0) {
+            return valuations[propertyId].currentValue;
+        }
+
+        // NAV = Pure property value ÷ total tokens
+        // No fees deducted here
+        // No rent included here
+        return valuations[propertyId].currentValue
+               / totalTokens[propertyId];
     }
-
-    PropertyValuation memory val = valuations[propertyId];
-    uint256 grossValue = val.currentValue + val.totalRentCollected;
-    uint256 platformFee = (grossValue * val.platformFeeRate) / 10000;
-    uint256 mgmtFee = (grossValue * val.mgmtFeeRate) / 10000;
-    uint256 netValue = grossValue - platformFee - mgmtFee;
-    return netValue / totalTokens[propertyId];
-}
 
     // ─── NAV History ──────────────────────────────────────
 
     function _recordNAV(uint256 propertyId) internal {
-    // Skip NAV recording if no tokens yet
-    if (totalTokens[propertyId] == 0) {
-        return;
+        uint256 nav = calculateNAV(propertyId);
+        uint256 index = navHistoryIndex[propertyId];
+
+        navHistory[propertyId][index] = NAVRecord({
+            nav: nav,
+            timestamp: block.timestamp
+        });
+
+        // Circular buffer — overwrites oldest after 30 records
+        navHistoryIndex[propertyId] = (index + 1) % 30;
+
+        if (navHistoryCount[propertyId] < 30) {
+            navHistoryCount[propertyId]++;
+        }
+
+        emit NAVCalculated(propertyId, nav, block.timestamp);
     }
-
-    uint256 nav = calculateNAV(propertyId);
-    uint256 index = navHistoryIndex[propertyId];
-
-    navHistory[propertyId][index] = NAVRecord({
-        nav: nav,
-        timestamp: block.timestamp
-    });
-
-    navHistoryIndex[propertyId] = (index + 1) % 30;
-
-    if (navHistoryCount[propertyId] < 30) {
-        navHistoryCount[propertyId]++;
-    }
-
-    emit NAVCalculated(propertyId, nav, block.timestamp);
-}
 
     function getNAVHistory(uint256 propertyId)
         external
@@ -229,8 +232,19 @@ contract OwnlyValuation {
     {
         PropertyValuation memory val = valuations[propertyId];
         require(val.exists, "Property not found");
+
         if (val.currentValue <= val.initialValue) return 0;
+
+        // Returns basis points: 1500 = 15%
         return ((val.currentValue - val.initialValue) * 10000)
                / val.initialValue;
+    }
+
+    function getTokenPrice(uint256 propertyId)
+        external
+        view
+        returns (uint256)
+    {
+        return calculateNAV(propertyId);
     }
 }
