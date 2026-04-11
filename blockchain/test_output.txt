@@ -1,0 +1,67 @@
+
+Compiled 3 Solidity files with solc 0.8.28 (evm target: cancun)
+Running Mocha tests
+
+
+  OwnlyProperty
+    Deployment
+      ✔ should set correct owner (5347ms)
+      ✔ should set correct platform wallet (92ms)
+      ✔ should set correct platform fee rate (89ms)
+      ✔ should set correct valuation contract (99ms)
+      ✔ should set correct INRC token (90ms)
+    Create Property
+      ✔ should create property with correct details (115ms)
+      ✔ should deploy OwnlyToken for the property (112ms)
+      ✔ should initialize property in valuation contract (112ms)
+      ✔ should increment propertyCount (131ms)
+      ✔ should NOT allow non-owner to create property (127ms)
+      ✔ should NOT create property with zero value (95ms)
+      ✔ should NOT create property with zero tokens (91ms)
+    Investment
+      ✔ should mint tokens to investor after investment (126ms)
+      ✔ should send 2% platform fee to platform wallet (115ms)
+      ✔ should update totalRaised after investment (111ms)
+      ✔ should NOT allow investment below NAV price (105ms)
+      ✔ should NOT allow investment exceeding funding goal (117ms)
+      ✔ should NOT allow investment in inactive property (110ms)
+      ✔ should NOT allow investment in sold property (142ms)
+      ✔ should NOT allow investment on non-existent property (105ms)
+    Rent Distribution (INRC)
+      ✔ should allow admin to deposit INRC rent (152ms)
+      ✔ should allow investor to claim INRC rent (164ms)
+      ✔ should distribute rent proportionally between investors (163ms)
+      ✔ should NOT allow double claiming rent (174ms)
+      ✔ should accumulate rent across multiple distributions (181ms)
+      ✔ should NOT allow non-owner to distribute rent (138ms)
+      ✔ should NOT distribute rent if no investors yet (116ms)
+      ✔ should NOT distribute zero rent (129ms)
+      ✔ should NOT distribute rent on sold property (144ms)
+    Property Sale
+      ✔ should allow admin to sell property (137ms)
+      ✔ should NOT allow selling twice (140ms)
+      ✔ should NOT allow non-owner to sell (157ms)
+      ✔ should NOT allow selling with zero amount (142ms)
+    Claim Sale Proceeds (MATIC)
+      ✔ should allow investor to claim proportional sale proceeds (139ms)
+      ✔ should NOT allow claiming sale proceeds before property is sold (123ms)
+      ✔ should NOT allow double claiming sale proceeds (130ms)
+      ✔ should transfer tokens to platform wallet on claim (142ms)
+    View Functions
+      ✔ should return correct investor info (121ms)
+      ✔ should return claimable rent in investor info (138ms)
+      ✔ should return correct property details (106ms)
+      ✔ should return zero claimable rent for non-investor (147ms)
+    Admin Setup Functions
+      ✔ should allow owner to update valuation contract (87ms)
+      ✔ should allow owner to update INRC token (81ms)
+      ✔ should allow owner to update platform wallet (88ms)
+      ✔ should NOT allow non-owner to update valuation (77ms)
+      ✔ should NOT allow non-owner to update platform wallet (85ms)
+
+
+  46 passing (11s)
+
+
+46 passing (46 mocha)
+

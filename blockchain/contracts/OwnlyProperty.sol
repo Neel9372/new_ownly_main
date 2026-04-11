@@ -9,16 +9,16 @@ import "./OwnlyValuation.sol";
 // and ARC when it launches
 interface IINRC {
     function transfer(
-        address to, 
+        address to,
         uint256 amount
     ) external returns (bool);
-    
+
     function transferFrom(
         address from,
         address to,
         uint256 amount
     ) external returns (bool);
-    
+
     function balanceOf(
         address account
     ) external view returns (uint256);
@@ -54,17 +54,17 @@ contract OwnlyProperty {
 
     // ─── Rent Distribution (INRC Claimable Pool) ──────────
 
-    // Total INRC rent deposited per property (accumulated)
+    // Total INRC rent per token accumulated (scaled by 1e18)
     mapping(uint256 => uint256) public totalRentPerToken;
 
-    // Track how much rent per token each investor claimed
-    mapping(uint256 => mapping(address => uint256)) 
+    // Track how much rent per token each investor has claimed
+    mapping(uint256 => mapping(address => uint256))
         public rentPerTokenClaimed;
 
     // ─── Sale Proceeds (MATIC) ────────────────────────────
 
     // Track sale proceeds claimed per investor
-    mapping(uint256 => mapping(address => uint256)) 
+    mapping(uint256 => mapping(address => uint256))
         public saleClaimedReturns;
 
     // ─── Properties ───────────────────────────────────────
@@ -308,7 +308,7 @@ contract OwnlyProperty {
     }
 
     // Investor claims their accumulated INRC rent
-    // They pay their own gas — platform pays nothing!
+    // They pay their own gas — platform pays nothing
     function claimRent(
         uint256 _propertyId
     ) external propertyExists(_propertyId) {
@@ -320,7 +320,7 @@ contract OwnlyProperty {
         require(investorTokens > 0, "No tokens held");
 
         // Calculate total entitled INRC
-        uint256 entitled = (investorTokens * 
+        uint256 entitled = (investorTokens *
             totalRentPerToken[_propertyId]) / 1e18;
 
         // Subtract what already claimed
@@ -404,9 +404,10 @@ contract OwnlyProperty {
         // Update before transfer (security)
         saleClaimedReturns[_propertyId][msg.sender] = entitledAmount;
 
-        // Transfer tokens to platform wallet
-        // NOT burned — platform can resell to new investors
-        token.transfer(platformWallet, investorTokens);
+        // Transfer investor's tokens to platform wallet
+        // Uses adminTransfer (property contract privilege) — no lock toggle needed
+        // since _update already allows property contract movements
+        token.adminTransfer(msg.sender, platformWallet, investorTokens);
 
         // Send MATIC to investor
         payable(msg.sender).transfer(claimable);

@@ -85,6 +85,25 @@ contract OwnlyToken is ERC20 {
         super._update(from, to, amount);
     }
 
+    // ─── Admin Transfer ───────────────────────────────────
+
+    // Property contract can force-transfer tokens (e.g. on sale claim)
+    // Temporarily unlocks transfers since both from/to may be non-property addresses
+    function adminTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) external onlyPropertyContract {
+        bool wasLocked = transfersLocked;
+        if (wasLocked) {
+            transfersLocked = false;
+        }
+        _transfer(from, to, amount);
+        if (wasLocked) {
+            transfersLocked = true;
+        }
+    }
+
     // ─── View Functions ───────────────────────────────────
 
     function getPropertyId() external view returns (uint256) {
