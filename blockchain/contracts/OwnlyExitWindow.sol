@@ -70,7 +70,7 @@ contract OwnlyExitWindow {
         _;
     }
 
-    // ─── Constructor ──────────────────────────────────────
+    // ─── Constructor OwnlyExitWindow.sol──────────────────────────────────────
 
     constructor(address _treasury) {
         require(_treasury != address(0), "Invalid treasury address");

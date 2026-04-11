@@ -51,7 +51,7 @@ contract OwnlyPool {
         _;
     }
 
-    // ─── Constructor ──────────────────────────────────────
+    // ─── Constructor OwnlyPool.sol ──────────────────────────────────────
 
     constructor() {
         admin = msg.sender;

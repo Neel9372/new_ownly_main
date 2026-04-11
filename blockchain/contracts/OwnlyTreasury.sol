@@ -42,7 +42,7 @@ contract OwnlyTreasury {
         _;
     }
 
-    // ─── Constructor ──────────────────────────────────────
+    // ─── Constructor  Ownly Treasury.sol──────────────────────────────────────
 
     constructor(address _platformWallet) {
         require(_platformWallet != address(0), "Invalid platform wallet");
