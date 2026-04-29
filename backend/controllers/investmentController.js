@@ -258,9 +258,28 @@ exports.getPropertyInvestments = async (req, res) => {
     );
 
     res.json({ investments: result.rows });
-
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch investments" });
+    res.status(500).json({ error: "Failed to fetch property investments" });
+  }
+};
+
+// GET ALL INVESTMENTS (Admin)
+exports.getAllInvestments = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT 
+        i.*,
+        u.fname, u.lname, u.email,
+        p.title as property_title
+       FROM investments i
+       JOIN users u ON i.user_id = u.id
+       JOIN properties p ON i.property_id = p.id
+       ORDER BY i.created_at DESC`
+    );
+    res.json({ investments: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch all investments" });
   }
 };

@@ -144,3 +144,15 @@ exports.getPropertyById = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch property" });
   }
 };
+
+// DELETE PROPERTY (Admin)
+exports.deleteProperty = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query(`DELETE FROM properties WHERE id = $1`, [id]);
+    res.json({ message: "Property deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete property" });
+  }
+};

@@ -6,11 +6,17 @@ const {
   getMyPortfolio,
   getMyTransactions,
   getPropertyInvestments,
+  getAllInvestments,
 } = require("../controllers/investmentController");
+
+const requireAdmin = require("../middleware/requireAdmin");
 
 router.post("/invest", authMiddleware, investInProperty);
 router.get("/portfolio", authMiddleware, getMyPortfolio);
 router.get("/transactions", authMiddleware, getMyTransactions);
-router.get("/property/:property_id", authMiddleware, getPropertyInvestments);
+
+// Admin Routes
+router.get("/all", authMiddleware, requireAdmin, getAllInvestments);
+router.get("/property/:property_id", authMiddleware, requireAdmin, getPropertyInvestments);
 
 module.exports = router;

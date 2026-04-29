@@ -25,7 +25,9 @@ const provider = new ethers.JsonRpcProvider(
   process.env.AMOY_RPC_URL || "https://rpc-amoy.polygon.technology"
 );
 
-const wallet = new ethers.Wallet(process.env.AMOY_PRIVATE_KEY, provider);
+// Fallback to a random private key if not set in .env (to prevent server crash on startup)
+const privateKey = process.env.AMOY_PRIVATE_KEY || ethers.Wallet.createRandom().privateKey;
+const wallet = new ethers.Wallet(privateKey, provider);
 
 console.log("🔗 Blockchain service initialized");
 console.log("   Network: Polygon Amoy Testnet");

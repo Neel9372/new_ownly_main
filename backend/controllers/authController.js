@@ -135,6 +135,33 @@ exports.getMe = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch user" });
+    res.status(500).json({ error: "Failed to fetch user data" });
+  }
+};
+
+// GET ALL USERS (Admin)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, fname, lname, email, role, kyc_status, wallet_status, wallet_address, created_at 
+       FROM users 
+       ORDER BY created_at DESC`
+    );
+    res.json({ users: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch all users" });
+  }
+};
+
+// REMOVE USER (Admin)
+exports.removeUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query(`DELETE FROM users WHERE id = $1`, [id]);
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete user" });
   }
 };

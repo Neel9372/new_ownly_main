@@ -19,9 +19,13 @@ export default function KYCPage() {
   const [formData, setFormData] = useState({
     id_proof_type: 'PAN',
     id_proof_number: '',
+    aadhaar_number: '',
     phone: '',
     address: '',
   });
+
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string>('');
   
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -41,8 +45,8 @@ export default function KYCPage() {
     e.preventDefault();
     setError('');
     
-    if (!formData.id_proof_number || !formData.phone || !formData.address) {
-      setError('Please fill in all required fields.');
+    if (!formData.id_proof_number || !formData.phone || !formData.address || !formData.aadhaar_number) {
+      setError('Please fill in all required fields (PAN, Aadhaar, Phone, Address).');
       return;
     }
     
@@ -51,8 +55,8 @@ export default function KYCPage() {
       await kycAPI.submit({
         id_proof_type: formData.id_proof_type,
         id_proof_number: formData.id_proof_number,
-        id_proof_image: 'https://example.com/pan_mock.jpg', // mocked upload
-        selfie_image: 'https://example.com/selfie_mock.jpg',
+        id_proof_image: filePreview || 'uploaded_document',
+        selfie_image: 'self_declaration',
       });
       await refreshUser();
       setStatus('SUBMITTED');
@@ -158,10 +162,11 @@ export default function KYCPage() {
                   required
                 />
                 <InputField
-                  label="AADHAAR (LAST 4 OK)"
-                  placeholder="XXXX"
-                  value={formData.id_proof_type === 'AADHAAR' ? formData.id_proof_number : ''}
-                  onChange={() => {}}
+                  label="AADHAAR NUMBER"
+                  placeholder="1234 5678 9012"
+                  value={formData.aadhaar_number}
+                  onChange={(v) => setFormData({ ...formData, aadhaar_number: v.replace(/[^0-9 ]/g, '').slice(0, 14) })}
+                  required
                 />
               </div>
 
@@ -183,13 +188,36 @@ export default function KYCPage() {
               </div>
 
               <div className="mt-10">
-                <div 
-                  className="border border-dashed border-[var(--border-input)] rounded-xl p-10 text-center cursor-pointer transition-colors hover:border-[var(--gold)]"
+                <label 
+                  className="border border-dashed border-[var(--border-input)] rounded-xl p-10 text-center cursor-pointer transition-colors hover:border-[var(--gold)] block"
                   style={{ background: 'var(--bg-input)' }}
                 >
-                  <UploadCloud size={28} className="mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-sm text-[var(--text-secondary)]">📄 Upload PAN + address proof (optional in demo).</p>
-                </div>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setUploadedFile(file);
+                        setFilePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                  {uploadedFile ? (
+                    <div>
+                      <CheckCircle2 size={28} className="mx-auto mb-3" style={{ color: 'var(--green)' }} />
+                      <p className="text-sm text-white font-medium">{uploadedFile.name}</p>
+                      <p className="text-[10px] text-[var(--text-secondary)] mt-1">{(uploadedFile.size / 1024).toFixed(0)} KB · Click to replace</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <UploadCloud size={28} className="mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+                      <p className="text-sm text-[var(--text-secondary)]">📄 Click to upload PAN card / Aadhaar / Address proof</p>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-2">JPG, PNG, PDF · Max 5MB</p>
+                    </div>
+                  )}
+                </label>
               </div>
 
               <div className="pt-6">

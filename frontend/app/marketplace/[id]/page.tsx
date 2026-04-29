@@ -56,7 +56,7 @@ export default function PropertyDetailPage() {
     }
 
     if (user.kyc_status !== 'VERIFIED') {
-      setInvestError('KYC verification is required before investing. Please go to the KYC page.');
+      router.push('/kyc');
       return;
     }
 

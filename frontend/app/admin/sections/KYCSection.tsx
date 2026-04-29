@@ -25,7 +25,7 @@ export default function KYCSection() {
   const fetchKYC = async () => {
     try {
       const res = await kycAPI.getPending();
-      setUsers(res.data.users || res.data.pending || []);
+      setUsers(res.data.pending_kyc || res.data.users || res.data.pending || []);
     } catch { setUsers([]); }
     finally { setLoading(false); }
   };

@@ -10,14 +10,7 @@ exports.submitKYC = async (req, res) => {
       return res.status(400).json({ error: "All KYC fields are required" });
     }
 
-    // Check wallet is connected first
-    const userCheck = await db.query(
-      `SELECT wallet_status FROM users WHERE id = $1`, [user_id]
-    );
 
-    if (userCheck.rows[0].wallet_status !== "CONNECTED") {
-      return res.status(400).json({ error: "Please connect your wallet before KYC" });
-    }
 
     const result = await db.query(
       `UPDATE users 
@@ -65,8 +58,8 @@ exports.getPendingKYC = async (req, res) => {
               id_proof_type, id_proof_number, 
               id_proof_image, selfie_image, created_at
        FROM users 
-       WHERE kyc_status = 'SUBMITTED'
-       ORDER BY created_at ASC`
+       WHERE kyc_status != 'NOT_SUBMITTED'
+       ORDER BY created_at DESC`
     );
 
     res.json({ pending_kyc: result.rows });
