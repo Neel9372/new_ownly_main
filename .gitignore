@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+*/node_modules/
 
 # Environment variables
 .env
@@ -9,6 +10,9 @@ node_modules/
 # Next.js
 frontend/.next/
 frontend/out/
+
+*/out
+*/cache
 
 # Build
 frontend/build/
@@ -33,3 +37,11 @@ frontend/next-env.d.ts
 
 # Test output
 backend/test_output.txt
+
+blockchain/.env
+
+# Blockchain
+blockchain/deployedAddresses.json
+blockchain/artifacts/
+blockchain/cache/
+blockchain/typechain-types/
