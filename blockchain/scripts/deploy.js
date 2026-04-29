@@ -2,6 +2,8 @@ import { network } from "hardhat";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +21,7 @@ async function main() {
     const balance = await ethers.provider.getBalance(deployer.address);
     console.log("💰 Account balance:", ethers.formatEther(balance), "MATIC\n");
 
-    const platformWallet = deployer.address;
+    const platformWallet = process.env.PLATFORM_WALLET || deployer.address;
     console.log("🏦 Platform wallet:", platformWallet);
 
     // ─── STEP 1: Deploy MockINRC ──────────────────────────

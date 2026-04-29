@@ -34,5 +34,14 @@ export default defineConfig({
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
+    // ─── Polygon Amoy Testnet ─────────────────────────────
+    amoy: {
+      type: "http",
+      chainType: "l1",
+      url: "https://rpc-amoy.polygon.technology",
+      accounts: [configVariable("AMOY_PRIVATE_KEY")],
+      // chainId: 80002
+    },
   },
 });
+
