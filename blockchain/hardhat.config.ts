@@ -50,5 +50,8 @@ export default defineConfig({
       // chainId: 80002
     },
   },
+  etherscan: {
+    apiKey: process.env.POLYGONSCAN_API_KEY || "9U2G3Y2BH72QTSR6GMMXEU8XEK8RH21361",
+  },
 });
 

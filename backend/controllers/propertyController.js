@@ -1,4 +1,5 @@
 const db = require("../db");
+const { createPropertyOnChain } = require("../service/blockchainService");
 
 // Add new property (Admin only)
 exports.addProperty = async (req, res) => {
@@ -44,8 +45,8 @@ exports.addProperty = async (req, res) => {
     // 3. Insert funding
     await client.query(
       `INSERT INTO property_funding
-        (property_id, total_tokens, token_price, funding_closing_date, current_valuation)
-       VALUES ($1,$2,$3,$4,$5)`,
+        (property_id, total_tokens, token_price, funding_closing_date, current_valuation, total_tokens_remaining)
+       VALUES ($1,$2,$3,$4,$5,$2)`,
       [property_id, total_tokens, token_price, funding_closing_date, current_valuation]
     );
 
@@ -67,9 +68,21 @@ exports.addProperty = async (req, res) => {
 
     await client.query("COMMIT");
 
+    // 6. Create property on blockchain (non-blocking — DB is already saved)
+    const tokenSymbol = "OWN" + property_id; // e.g. OWN1, OWN2
+    const chainResult = await createPropertyOnChain(
+      title,
+      location || "India",
+      property_id,
+      total_investment_cost || property_price,
+      total_tokens,
+      tokenSymbol
+    );
+
     res.json({
       message: "Property added successfully",
       property_id,
+      blockchain: chainResult,
     });
 
   } catch (err) {

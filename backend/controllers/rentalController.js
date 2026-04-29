@@ -1,4 +1,5 @@
 const db = require("../db");
+const { distributeRentOnChain } = require("../service/blockchainService");
 
 // Admin distributes rental income for a property
 exports.distributeRental = async (req, res) => {
@@ -99,12 +100,17 @@ exports.distributeRental = async (req, res) => {
 
         await client.query("COMMIT");
 
+        // 7. Distribute rent on blockchain too
+        //    Uses on-chain propertyId (matches DB property_id via dbPropertyId field)
+        const chainResult = await distributeRentOnChain(property_id, total_rental_amount);
+
         res.json({
             message: `Rental distributed successfully for ${month} ${year}`,
             property_id,
             total_rental_amount,
             total_investors: investors.rows.length,
             distribution_summary: distributionSummary,
+            blockchain: chainResult,
         });
 
     } catch (err) {
