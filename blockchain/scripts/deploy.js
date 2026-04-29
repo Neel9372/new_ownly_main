@@ -124,7 +124,7 @@ async function main() {
     console.log("\n💾 Step 8: Saving deployed addresses...");
 
     const addresses = {
-        network: "hardhat",
+        network: network.name,
         deployedAt: new Date().toISOString(),
         deployer: deployer.address,
         platformWallet: platformWallet,

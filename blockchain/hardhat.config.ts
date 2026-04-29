@@ -7,6 +7,12 @@ export default defineConfig({
     profiles: {
       default: {
         version: "0.8.28",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
       production: {
         version: "0.8.28",
@@ -40,6 +46,7 @@ export default defineConfig({
       chainType: "l1",
       url: "https://rpc-amoy.polygon.technology",
       accounts: [configVariable("AMOY_PRIVATE_KEY")],
+      gasPrice: 25_000_000_000, // 25 gwei (Amoy enforced minimum)
       // chainId: 80002
     },
   },

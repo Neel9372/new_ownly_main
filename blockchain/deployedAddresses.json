@@ -1,14 +1,14 @@
 {
-  "network": "hardhat",
-  "deployedAt": "2026-04-29T09:15:35.122Z",
-  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "platformWallet": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "network": "amoy",
+  "deployedAt": "2026-04-29T13:39:45.642Z",
+  "deployer": "0x57FD968970EF092f3dcc2138B668CEEddB307362",
+  "platformWallet": "0x57FD968970EF092f3dcc2138B668CEEddB307362",
   "contracts": {
-    "MockINRC": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "OwnlyTreasury": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "OwnlyPool": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "OwnlyValuation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "OwnlyExitWindow": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "OwnlyProperty": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+    "MockINRC": "0x47AC4670C7E7D0FCCC9F96732Ba76Bcee707dD5A",
+    "OwnlyTreasury": "0xa983c1EEA353C7661101749Ade3f7c8F157c121b",
+    "OwnlyPool": "0x624B72b71B5F7366489739E2a07dc59CF7aE8CbE",
+    "OwnlyValuation": "0x73f32a53942dE5844Df0072898E94a29DAF24eDd",
+    "OwnlyExitWindow": "0xC25A25A4AB67c561b89E32Bc1f8754526c0b8eE8",
+    "OwnlyProperty": "0xdCCbf20B3282D53094dE6b380FD25Ac2002549B7"
   }
 }
