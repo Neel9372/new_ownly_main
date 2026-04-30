@@ -25,8 +25,15 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
     try {
-      await login(email, password);
-      router.push('/portfolio');
+      const user = await login(email, password);
+      
+      if (user.role === 'ADMIN') {
+        router.push('/admin');
+      } else if (user.role === 'BUILDER') {
+        router.push('/builder');
+      } else {
+        router.push('/portfolio');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {

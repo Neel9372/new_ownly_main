@@ -61,7 +61,10 @@ async function createPropertyOnChain(name, location, dbPropertyId, totalValue, t
       name,
       location,
       dbPropertyId,
-      ethers.parseEther(totalValue.toString()), // Convert to wei
+      // DEMO FIX: Override totalValue in INR to equal totalTokens.
+      // This forces the on-chain NAV calculation (totalValue / totalTokens) to exactly 1 MATIC.
+      // Otherwise, passing 18,600,000 INR causes the contract to demand 3720 MATIC per token!
+      ethers.parseEther(totalTokens.toString()), // Force 1 Token = 1 MATIC
       totalTokens,
       tokenSymbol
     );

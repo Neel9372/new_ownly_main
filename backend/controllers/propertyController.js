@@ -29,7 +29,7 @@ exports.addProperty = async (req, res) => {
         (title, property_type, status, size_sqft, location, developer, building_age, total_floors, amenities)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING *`,
-      [title, property_type, status, size_sqft, location, developer, building_age, total_floors, amenities]
+      [title, property_type || 'Residential', status || 'AVAILABLE', size_sqft || null, location || null, developer || null, building_age || null, total_floors || null, amenities || null]
     );
 
     const property_id = propertyResult.rows[0].id;
@@ -39,15 +39,15 @@ exports.addProperty = async (req, res) => {
       `INSERT INTO property_financials
         (property_id, property_price, transaction_costs, total_investment_cost, price_per_sqft, gross_yield, net_yield, annual_appreciation)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [property_id, property_price, transaction_costs, total_investment_cost, price_per_sqft, gross_yield, net_yield, annual_appreciation]
+      [property_id, property_price || null, transaction_costs || null, total_investment_cost || null, price_per_sqft || null, gross_yield || null, net_yield || null, annual_appreciation || null]
     );
 
     // 3. Insert funding
     await client.query(
       `INSERT INTO property_funding
         (property_id, total_tokens, token_price, funding_closing_date, current_valuation, total_tokens_remaining)
-       VALUES ($1,$2,$3,$4,$5,$2)`,
-      [property_id, total_tokens, token_price, funding_closing_date, current_valuation]
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [property_id, total_tokens || null, token_price || null, funding_closing_date || null, current_valuation || null, total_tokens || null]
     );
 
     // 4. Insert leasing
@@ -55,7 +55,7 @@ exports.addProperty = async (req, res) => {
       `INSERT INTO property_leasing
         (property_id, leasing_strategy, occupancy_rate, projected_annual_rent, rental_payment_schedule)
        VALUES ($1,$2,$3,$4,$5)`,
-      [property_id, leasing_strategy, occupancy_rate, projected_annual_rent, rental_payment_schedule]
+      [property_id, leasing_strategy || null, occupancy_rate || null, projected_annual_rent || null, rental_payment_schedule || null]
     );
 
     // 5. Insert media
@@ -63,7 +63,7 @@ exports.addProperty = async (req, res) => {
       `INSERT INTO property_media
         (property_id, image_url, document_url, investment_tag)
        VALUES ($1,$2,$3,$4)`,
-      [property_id, image_url, document_url, investment_tag]
+      [property_id, image_url || null, document_url || null, investment_tag || null]
     );
 
     await client.query("COMMIT");

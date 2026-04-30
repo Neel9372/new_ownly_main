@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { propertiesAPI, investmentsAPI } from '@/lib/api';
+import { propertiesAPI, investmentsAPI, authAPI } from '@/lib/api';
 import { useWallet } from '@/context/WalletContext';
 import { useAuth } from '@/context/AuthContext';
 import { investOnChain } from '@/lib/contracts';
@@ -38,7 +38,9 @@ export default function PropertyDetailPage() {
     try {
       const res = await propertiesAPI.getById(propertyId);
       setData(res.data);
-      setInvestAmount(Number(res.data.funding.token_price)); // Default to 1 token
+      if (res.data.funding?.token_price) {
+        setInvestAmount(Number(res.data.funding.token_price));
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -60,18 +62,38 @@ export default function PropertyDetailPage() {
       return;
     }
 
-    if (!signer) {
+    let currentSigner = signer;
+    if (!currentSigner) {
       try {
         await connect();
+        // After connect, context state might take a tick to update, but we can't easily await it.
+        // The safest approach is to ensure connect() actually connects MetaMask.
       } catch (err: any) {
         setInvestError(err.message || 'Wallet connection failed');
         return;
       }
     }
+    
+    // Fallback if signer is still not in state but we just connected
+    // This is a quick fix; in real app we'd await the signer from provider.
+    if (!signer) {
+       setInvestError('Please connect your wallet and click Invest again.');
+       return;
+    }
 
-    if (!signer) return; // Still no signer after connect attempt
+    try {
+      const address = await signer.getAddress();
+      await authAPI.connectWallet(address);
+    } catch (e) {
+      console.error("Failed to sync wallet with backend", e);
+    }
 
-    const tokensToBuy = Math.floor(investAmount / Number(data!.funding.token_price));
+    const tokenPrice = Number(data!.funding?.token_price || 0);
+    if (tokenPrice <= 0) {
+      setInvestError('Invalid token price.');
+      return;
+    }
+    const tokensToBuy = Math.floor(investAmount / tokenPrice);
     if (tokensToBuy <= 0) {
       setInvestError('Investment amount must be at least 1 token price.');
       return;
@@ -81,13 +103,13 @@ export default function PropertyDetailPage() {
 
     try {
       // 1. Call Smart Contract
-      // NOTE: In a real environment, you'd calculate exact ETH/MATIC equivalent.
-      // Here, we're assuming a 1:1 test token ratio for demo purposes or using MockINRC
-      // Since the requirements state `value: parseEther(amount)` for the invest function,
-      // we'll pass the amount. However, if using MockINRC (ERC20), it would be an approve + transferFrom.
-      // We will stick to the simplified investOnChain provided in contracts.ts.
+      // NOTE: In the DB, token_price is in INR (e.g. 5000). But on-chain, our test 
+      // property was deployed with a NAV of 1 MATIC per token.
+      // If we pass 5000 to parseEther, it tries to send 5000 MATIC, which fails (insufficient funds).
+      // For this demo, we'll send 1.05 MATIC per token (1 MATIC + 2% fee + buffer).
+      const demoMaticAmount = (tokensToBuy * 1.05).toFixed(4);
       
-      const receipt = await investOnChain(signer, propertyId, investAmount.toString());
+      const receipt = await investOnChain(signer, propertyId, demoMaticAmount);
       
       // 2. Report to Backend
       await investmentsAPI.invest({
@@ -101,7 +123,17 @@ export default function PropertyDetailPage() {
       
     } catch (err: any) {
       console.error(err);
-      setInvestError(err.response?.data?.error || err.message || 'Investment failed');
+      
+      let errorMsg = err.response?.data?.error || err.message || 'Investment failed';
+      
+      // Handle common EVM revert errors
+      if (errorMsg.includes('missing revert data')) {
+        errorMsg = 'Transaction failed on-chain. This usually means either: 1) You do not have enough MATIC for gas/investment, or 2) This specific property ID has not been created on the blockchain yet.';
+      } else if (errorMsg.includes('insufficient funds')) {
+        errorMsg = 'Insufficient testnet MATIC in your MetaMask wallet.';
+      }
+
+      setInvestError(errorMsg);
     } finally {
       setIsInvesting(false);
     }
@@ -115,7 +147,10 @@ export default function PropertyDetailPage() {
     return <div className="min-h-screen flex items-center justify-center">Property not found.</div>;
   }
 
-  const { property, financials, funding, leasing } = data;
+  const property = data.property || {};
+  const financials = data.financials || {};
+  const funding = data.funding || {};
+  const leasing = data.leasing || {};
   const imgUrl = data.media?.image_url || PROPERTY_IMAGES[propertyId % PROPERTY_IMAGES.length];
   const model = property.source === 'BUILDER' ? 'BUILDER RAISE' : 'RENTAL SPV';
 

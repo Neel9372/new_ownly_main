@@ -39,11 +39,32 @@ export default function PropertiesSection() {
     setSubmitting(true);
     try {
       await propertiesAPI.add({
-        property: { title: form.title, property_type: form.property_type, location: form.location, developer: form.developer, size_sqft: Number(form.size_sqft), building_age: Number(form.building_age), total_floors: Number(form.total_floors), amenities: form.amenities, rera_id: form.rera_id },
-        financials: { property_price: Number(form.property_price), transaction_costs: Number(form.transaction_costs), total_investment_cost: Number(form.property_price) + Number(form.transaction_costs), price_per_sqft: Math.round(Number(form.property_price) / Number(form.size_sqft)), gross_yield: Number(form.gross_yield), net_yield: Number(form.net_yield), annual_appreciation: Number(form.annual_appreciation), predicted_roi: Number(form.predicted_roi) },
-        funding: { total_tokens: Number(form.total_tokens), token_price: Number(form.token_price), funding_closing_date: form.funding_closing_date, current_valuation: Number(form.property_price) },
-        leasing: { leasing_strategy: form.leasing_strategy, occupancy_rate: Number(form.occupancy_rate), projected_annual_rent: Number(form.projected_annual_rent) },
-        media: { image_url: form.image_url, investment_tag: form.investment_tag },
+        title: form.title, 
+        property_type: form.property_type, 
+        status: 'AVAILABLE',
+        location: form.location, 
+        developer: form.developer, 
+        size_sqft: Number(form.size_sqft), 
+        building_age: Number(form.building_age), 
+        total_floors: Number(form.total_floors), 
+        amenities: form.amenities, 
+        rera_id: form.rera_id,
+        property_price: Number(form.property_price), 
+        transaction_costs: Number(form.transaction_costs), 
+        total_investment_cost: Number(form.property_price) + Number(form.transaction_costs), 
+        price_per_sqft: Math.round(Number(form.property_price) / Number(form.size_sqft)), 
+        gross_yield: Number(form.gross_yield), 
+        net_yield: Number(form.net_yield), 
+        annual_appreciation: Number(form.annual_appreciation), 
+        total_tokens: Number(form.total_tokens), 
+        token_price: Number(form.token_price), 
+        funding_closing_date: form.funding_closing_date, 
+        current_valuation: Number(form.property_price),
+        leasing_strategy: form.leasing_strategy, 
+        occupancy_rate: Number(form.occupancy_rate), 
+        projected_annual_rent: Number(form.projected_annual_rent),
+        image_url: form.image_url, 
+        investment_tag: form.investment_tag
       });
       setShowAddForm(false);
       fetchProperties();
