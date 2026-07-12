@@ -62,30 +62,41 @@ export default function PropertyDetailPage() {
       return;
     }
 
-    let currentSigner = signer;
-    if (!currentSigner) {
+    // Get a signer — either from context or by connecting wallet
+    let activeSigner = signer;
+    if (!activeSigner) {
       try {
-        await connect();
-        // After connect, context state might take a tick to update, but we can't easily await it.
-        // The safest approach is to ensure connect() actually connects MetaMask.
+        const addr = await connect();
+        if (!addr) {
+          setInvestError('Wallet connection was cancelled. Please try again.');
+          return;
+        }
+        // connect() updates React state async, but we need the signer NOW.
+        // Create a fresh signer from the browser provider directly.
+        const ethereum = (window as any).ethereum;
+        if (ethereum) {
+          const { BrowserProvider } = await import('ethers');
+          const provider = new BrowserProvider(ethereum);
+          activeSigner = await provider.getSigner();
+        }
       } catch (err: any) {
         setInvestError(err.message || 'Wallet connection failed');
         return;
       }
     }
-    
-    // Fallback if signer is still not in state but we just connected
-    // This is a quick fix; in real app we'd await the signer from provider.
-    if (!signer) {
-       setInvestError('Please connect your wallet and click Invest again.');
-       return;
+
+    if (!activeSigner) {
+      setInvestError('Could not get wallet signer. Please refresh and try again.');
+      return;
     }
 
     try {
-      const address = await signer.getAddress();
+      const address = await activeSigner.getAddress();
       await authAPI.connectWallet(address);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to sync wallet with backend", e);
+      setInvestError(e.response?.data?.error || "Failed to sync wallet. It might be linked to another account.");
+      return;
     }
 
     const tokenPrice = Number(data!.funding?.token_price || 0);
@@ -109,7 +120,9 @@ export default function PropertyDetailPage() {
       // For this demo, we'll send 1.05 MATIC per token (1 MATIC + 2% fee + buffer).
       const demoMaticAmount = (tokensToBuy * 1.05).toFixed(4);
       
-      const receipt = await investOnChain(signer, propertyId, demoMaticAmount);
+      // Pass on_chain_property_id from DB to skip the slow on-chain scan
+      const onChainId = (data!.property as any)?.on_chain_property_id || null;
+      const receipt = await investOnChain(activeSigner, propertyId, demoMaticAmount, onChainId);
       
       // 2. Report to Backend
       await investmentsAPI.invest({

@@ -23,7 +23,7 @@ exports.distributeRental = async (req, res) => {
 
         // 1. Check property exists
         const propertyCheck = await client.query(
-            `SELECT p.*, pf.total_tokens
+            `SELECT p.*, p.on_chain_property_id, pf.total_tokens
        FROM properties p
        JOIN property_funding pf ON p.id = pf.property_id
        WHERE p.id = $1`,
@@ -101,8 +101,9 @@ exports.distributeRental = async (req, res) => {
         await client.query("COMMIT");
 
         // 7. Distribute rent on blockchain too
-        //    Uses on-chain propertyId (matches DB property_id via dbPropertyId field)
-        const chainResult = await distributeRentOnChain(property_id, total_rental_amount);
+        //    Use on-chain property ID (not DB id) so the contract targets the right property
+        const onChainId = propertyCheck.rows[0].on_chain_property_id || property_id;
+        const chainResult = await distributeRentOnChain(onChainId, total_rental_amount);
 
         res.json({
             message: `Rental distributed successfully for ${month} ${year}`,

@@ -255,13 +255,8 @@ contract OwnlyProperty {
         // Mint tokens to investor
         OwnlyToken(prop.tokenAddress).mint(msg.sender, tokenAmount);
 
-        // Update total tokens in valuation contract
-        if (valuationContract != address(0)) {
-            OwnlyValuation(valuationContract).updateTotalTokens(
-                _propertyId,
-                OwnlyToken(prop.tokenAddress).totalSupply()
-            );
-        }
+        // DO NOT update totalTokens in valuation contract with circulating supply.
+        // Valuation's totalTokens should remain the max supply to keep NAV correct.
 
         emit Invested(
             _propertyId,

@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { NAV_LINKS } from '@/lib/constants';
 import { ArrowRight, Sparkles, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import WalletButton from '@/components/WalletButton';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -66,6 +67,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4 shrink-0">
           {user ? (
             <>
+              <WalletButton />
               <span className="text-xs hidden sm:block font-medium" style={{ color: 'var(--text-secondary)' }}>
                 {user.fname} {user.lname}
               </span>

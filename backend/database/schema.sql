@@ -62,6 +62,10 @@ CREATE TABLE properties (
     builder_project_id INT,
     listed_by INT,
 
+    -- Blockchain
+    on_chain_property_id INT,
+    token_address VARCHAR(255),
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

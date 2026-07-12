@@ -43,17 +43,21 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Auto-connect wallet when a user is logged in
+  // Auto-connect wallet ONLY if user previously connected one (wallet_status is CONNECTED in DB)
+  // New users (wallet_status = 'NOT_CONNECTED') must click "Connect Wallet" manually
   useEffect(() => {
     if (!user) return;
+    if (user.wallet_status !== 'CONNECTED') return; // ← Skip for new users
 
     const autoConnect = async () => {
       const ethereum = getEthereum();
       if (!ethereum) return;
 
       try {
-        // Request accounts — triggers MetaMask popup if not yet connected
-        await ethereum.request({ method: 'eth_requestAccounts' });
+        // Use eth_accounts (silent) instead of eth_requestAccounts (popup)
+        // This only returns accounts if MetaMask already authorized this site
+        const accounts = await ethereum.request({ method: 'eth_accounts' });
+        if (!accounts || accounts.length === 0) return; // Not authorized — don't force popup
 
         const provider = new BrowserProvider(ethereum);
 
@@ -106,10 +110,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
     setIsConnecting(true);
     try {
-      const provider = new BrowserProvider(ethereum);
-
       // This pops up MetaMask asking user to connect
-      await provider.send('eth_requestAccounts', []);
+      await ethereum.request({ method: 'eth_requestAccounts' });
+      
+      const provider = new BrowserProvider(ethereum);
 
       // Check network and try to switch if needed
       const network = await provider.getNetwork();

@@ -79,6 +79,14 @@ exports.addProperty = async (req, res) => {
       tokenSymbol
     );
 
+    // 7. Save on-chain IDs back to DB so other operations can reference them
+    if (chainResult.success && chainResult.onChainPropertyId) {
+      await db.query(
+        `UPDATE properties SET on_chain_property_id = $1, token_address = $2 WHERE id = $3`,
+        [chainResult.onChainPropertyId, chainResult.tokenAddress, property_id]
+      );
+    }
+
     res.json({
       message: "Property added successfully",
       property_id,
