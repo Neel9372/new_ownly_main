@@ -68,7 +68,7 @@ export default function PropertyDetailPage() {
       try {
         const addr = await connect();
         if (!addr) {
-          setInvestError('Wallet connection was cancelled. Please try again.');
+          alert('Wallet connection was cancelled or failed. Please try again.');
           return;
         }
         // connect() updates React state async, but we need the signer NOW.
@@ -80,13 +80,13 @@ export default function PropertyDetailPage() {
           activeSigner = await provider.getSigner();
         }
       } catch (err: any) {
-        setInvestError(err.message || 'Wallet connection failed');
+        alert(err.message || 'Wallet connection failed');
         return;
       }
     }
 
     if (!activeSigner) {
-      setInvestError('Could not get wallet signer. Please refresh and try again.');
+      alert('Could not get wallet signer. Please refresh and try again.');
       return;
     }
 
@@ -95,7 +95,7 @@ export default function PropertyDetailPage() {
       await authAPI.connectWallet(address);
     } catch (e: any) {
       console.error("Failed to sync wallet with backend", e);
-      setInvestError(e.response?.data?.error || "Failed to sync wallet. It might be linked to another account.");
+      alert(e.response?.data?.error || "Failed to sync wallet. It might be linked to another account.");
       return;
     }
 

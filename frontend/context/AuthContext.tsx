@@ -12,6 +12,7 @@ interface AuthUser {
   role: string;
   wallet_status: string;
   kyc_status: string;
+  kyc_rejection_reason?: string;
 }
 
 interface AuthContextType {

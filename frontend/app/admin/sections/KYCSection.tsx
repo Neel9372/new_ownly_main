@@ -8,7 +8,7 @@ import { CheckCircle2, XCircle, Clock, User, Search, AlertTriangle } from 'lucid
 interface KYCUser {
   id: number; fname: string; lname: string; email: string;
   kyc_status: string; id_proof_type?: string; id_proof_number?: string;
-  created_at: string;
+  id_proof_image?: string; created_at: string;
 }
 
 export default function KYCSection() {
@@ -101,7 +101,16 @@ export default function KYCSection() {
                 <tr key={u.id}>
                   <td className="font-medium text-white">{u.fname} {u.lname}</td>
                   <td className="text-[var(--text-secondary)]">{u.email}</td>
-                  <td><span className="font-mono text-xs text-white">{u.id_proof_type} · {u.id_proof_number || '—'}</span></td>
+                  <td>
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="font-mono text-xs text-white">{u.id_proof_type} · {u.id_proof_number || '—'}</span>
+                      {u.id_proof_image && (
+                        <a href={u.id_proof_image} target="_blank" rel="noopener noreferrer" className="text-[var(--gold)] text-xs hover:underline">
+                          View Document
+                        </a>
+                      )}
+                    </div>
+                  </td>
                   <td>
                     <Badge variant={u.kyc_status === 'VERIFIED' ? 'live' : u.kyc_status === 'REJECTED' ? 'rejected' : 'pending'}>
                       {u.kyc_status}

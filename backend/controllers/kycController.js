@@ -37,7 +37,7 @@ exports.submitKYC = async (req, res) => {
 exports.getKYCStatus = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT id, fname, email, kyc_status, id_proof_type 
+      `SELECT id, fname, email, kyc_status, id_proof_type, kyc_rejection_reason 
        FROM users WHERE id = $1`,
       [req.user.id]
     );
@@ -56,7 +56,7 @@ exports.getPendingKYC = async (req, res) => {
     const result = await db.query(
       `SELECT id, fname, lname, email, kyc_status, 
               id_proof_type, id_proof_number, 
-              id_proof_image, selfie_image, created_at
+              id_proof_image, selfie_image, kyc_rejection_reason, created_at
        FROM users 
        WHERE kyc_status != 'NOT_SUBMITTED'
        ORDER BY created_at DESC`
@@ -74,17 +74,17 @@ exports.getPendingKYC = async (req, res) => {
 exports.verifyKYC = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, rejection_reason } = req.body;
 
     if (!["VERIFIED", "REJECTED"].includes(status)) {
       return res.status(400).json({ error: "Status must be VERIFIED or REJECTED" });
     }
 
     const result = await db.query(
-      `UPDATE users SET kyc_status = $1
-       WHERE id = $2
-       RETURNING id, fname, email, kyc_status`,
-      [status, id]
+      `UPDATE users SET kyc_status = $1, kyc_rejection_reason = $2
+       WHERE id = $3
+       RETURNING id, fname, email, kyc_status, kyc_rejection_reason`,
+      [status, status === 'REJECTED' ? (rejection_reason || null) : null, id]
     );
 
     if (result.rows.length === 0) {

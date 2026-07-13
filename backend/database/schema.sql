@@ -33,6 +33,7 @@ CREATE TABLE users (
     id_proof_image TEXT,
     selfie_image TEXT,
     kyc_status VARCHAR(20) DEFAULT 'NOT_SUBMITTED',
+    kyc_rejection_reason TEXT,
     -- NOT_SUBMITTED / SUBMITTED / VERIFIED / REJECTED
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -13,7 +13,7 @@ import PageHeader from '@/components/PageHeader';
 
 export default function PortfolioPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { address } = useWallet();
   
   const [portfolio, setPortfolio] = useState<Investment[]>([]);
@@ -21,12 +21,13 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
     }
     fetchPortfolio();
-  }, [user]);
+  }, [user, isLoading]);
 
   const fetchPortfolio = async () => {
     try {

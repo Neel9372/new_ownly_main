@@ -76,6 +76,7 @@ exports.login = async (req, res) => {
         role: user.role,
         wallet_status: user.wallet_status,
         kyc_status: user.kyc_status,
+        kyc_rejection_reason: user.kyc_rejection_reason,
       },
     });
 
@@ -122,7 +123,7 @@ exports.getMe = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT id, fname, mname, lname, email, role, 
-              wallet_address, wallet_status, kyc_status, created_at
+              wallet_address, wallet_status, kyc_status, kyc_rejection_reason, created_at
        FROM users WHERE id = $1`,
       [req.user.id]
     );

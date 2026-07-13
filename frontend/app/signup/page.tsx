@@ -23,8 +23,13 @@ export default function SignupPage() {
 
   const calculateStrength = (pass: string) => {
     if (pass.length === 0) return { score: 0, label: '', color: '' };
-    if (pass.length < 6) return { score: 1, label: 'WEAK', color: 'var(--red)' };
-    if (pass.length < 10) return { score: 2, label: 'DECENT', color: 'var(--amber)' };
+    let s = 0;
+    if (pass.length >= 8) s += 1;
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) s += 1;
+    if (/[0-9]/.test(pass) && /[^A-Za-z0-9]/.test(pass)) s += 1;
+
+    if (s <= 1) return { score: 1, label: 'WEAK', color: 'var(--red)' };
+    if (s === 2) return { score: 2, label: 'DECENT', color: 'var(--amber)' };
     return { score: 3, label: 'STRONG', color: 'var(--green)' };
   };
 
@@ -36,6 +41,18 @@ export default function SignupPage() {
     
     if (!agree) {
       setError('You must agree to the Terms and Privacy Policy');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Invalid email address format.');
+      return;
+    }
+
+    const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!passRegex.test(password)) {
+      setError('Password must be at least 8 characters, with 1 uppercase, 1 lowercase, 1 number, and 1 special character.');
       return;
     }
 

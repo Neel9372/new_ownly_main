@@ -31,6 +31,7 @@ export interface User {
   id_proof_image?: string;
   selfie_image?: string;
   kyc_status: 'NOT_SUBMITTED' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+  kyc_rejection_reason?: string;
 
   created_at: string;
 }

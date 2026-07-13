@@ -23,6 +23,19 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Invalid email address format.');
+      return;
+    }
+
+    const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!passRegex.test(password)) {
+      setError('Invalid password format.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const user = await login(email, password);

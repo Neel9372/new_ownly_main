@@ -10,7 +10,7 @@ import GoldButton from '@/components/GoldButton';
 import { Shield, CheckCircle2, UploadCloud, Clock, AlertTriangle } from 'lucide-react';
 
 export default function KYCPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
   const [status, setStatus] = useState<string>('NOT_SUBMITTED');
@@ -31,15 +31,23 @@ export default function KYCPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       router.push('/login');
       return;
     }
     
-    // Check initial user state
-    setStatus(user.kyc_status);
-    setLoading(false);
-  }, [user, router]);
+    // Always fetch fresh data on mount to see if admin approved/rejected
+    refreshUser().then(() => {
+      setLoading(false);
+    });
+  }, [authLoading, router]);
+
+  useEffect(() => {
+    if (user) {
+      setStatus(user.kyc_status);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +55,27 @@ export default function KYCPage() {
     
     if (!formData.id_proof_number || !formData.phone || !formData.address || !formData.aadhaar_number) {
       setError('Please fill in all required fields (PAN, Aadhaar, Phone, Address).');
+      return;
+    }
+
+    // PAN validation
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!panRegex.test(formData.id_proof_number)) {
+      setError('Invalid PAN Card number format. Example: ABCDE1234F');
+      return;
+    }
+
+    // Aadhaar validation (12 digits, ignoring spaces)
+    const aadhaarRegex = /^\d{12}$/;
+    if (!aadhaarRegex.test(formData.aadhaar_number.replace(/\s/g, ''))) {
+      setError('Invalid Aadhaar Card number. Must be exactly 12 digits.');
+      return;
+    }
+
+    // Phone validation
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
+      setError('Invalid phone number format. Must be exactly 10 digits.');
       return;
     }
     
@@ -105,9 +134,15 @@ export default function KYCPage() {
       <div className="page-container py-24 flex flex-col items-center text-center">
         <AlertTriangle size={64} style={{ color: 'var(--red)' }} className="mb-6" />
         <h1 className="font-heading font-bold text-4xl text-white mb-4">Verification Failed</h1>
-        <p className="text-[var(--text-secondary)] max-w-md mb-8">
+        <p className="text-[var(--text-secondary)] max-w-md mb-4">
           Unfortunately, we could not verify your documents. Please ensure all details match your PAN and Aadhaar and try again.
         </p>
+        {(user as any)?.kyc_rejection_reason && (
+          <div className="bg-[var(--red)]/10 border border-[var(--red)]/20 text-[var(--red)] p-4 rounded-xl max-w-md mb-8 w-full text-left text-sm">
+            <strong>Reason for rejection:</strong><br />
+            {(user as any).kyc_rejection_reason}
+          </div>
+        )}
         <button onClick={() => setStatus('NOT_SUBMITTED')} className="btn-outline border-[var(--red)] text-[var(--red)]">
           Try Again
         </button>
