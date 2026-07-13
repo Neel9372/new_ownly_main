@@ -12,7 +12,7 @@ import GoldButton from '@/components/GoldButton';
 import { 
   TrendingUp, Wallet, Lock, Calendar, Hammer, 
   Camera, FileText, CheckCircle2, AlertTriangle, Plus, Upload, 
-  ExternalLink, ShieldAlert, FolderKanban, Users, Clock
+  ExternalLink, ShieldAlert, FolderKanban, Users, Clock, Trash2
 } from 'lucide-react';
 import type { BuilderProject, ProjectMilestone, ProjectDocument, ProjectUpdate } from '@/types';
 
@@ -234,6 +234,22 @@ export default function BuilderPage() {
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.error || 'Failed to upload document.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteDocument = async (docId: number) => {
+    if (!selectedProjectId) return;
+    if (!window.confirm("Are you sure you want to delete this document?")) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      await builderAPI.deleteDocument(docId);
+      await fetchProjectDetails(selectedProjectId);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Failed to delete document.');
     } finally {
       setSubmitting(false);
     }
@@ -766,19 +782,29 @@ export default function BuilderPage() {
                     <p className="text-xs text-[var(--text-muted)]">No documents uploaded yet.</p>
                   ) : (
                     documents.map((doc) => (
-                      <a 
-                        key={doc.id} 
-                        href={doc.document_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center justify-between p-2.5 rounded border border-[var(--border-card)] hover:border-[var(--gold)] bg-[var(--bg-input)] no-underline text-white transition-colors"
+                      <div 
+                        key={doc.id}
+                        className="flex items-center justify-between p-2.5 rounded border border-[var(--border-card)] hover:border-[var(--gold)] bg-[var(--bg-input)] text-white transition-colors"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
+                        <a 
+                          href={doc.document_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center gap-2 min-w-0 no-underline text-white hover:text-[var(--gold)] transition-colors flex-1"
+                        >
                           <FileText size={14} className="text-[var(--gold)] shrink-0" />
                           <span className="text-xs font-medium truncate uppercase">{doc.document_type.replace('_', ' ')}</span>
-                        </div>
-                        <ExternalLink size={12} className="text-[var(--text-muted)] shrink-0" />
-                      </a>
+                          <ExternalLink size={10} className="text-[var(--text-muted)] shrink-0 ml-1" />
+                        </a>
+                        
+                        <button 
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="text-[var(--red)] hover:text-red-400 p-1 rounded hover:bg-red-500/10 cursor-pointer bg-transparent border-none transition-colors ml-2 shrink-0 flex items-center justify-center"
+                          title="Delete Document"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>

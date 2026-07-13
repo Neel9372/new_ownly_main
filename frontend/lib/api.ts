@@ -145,6 +145,9 @@ export const builderAPI = {
 
   addProjectUpdate: (project_id: number, data: { title: string; description: string; photos_count?: number }) =>
     api.post(`/builder/project/${project_id}/update`, data),
+
+  deleteDocument: (document_id: number) =>
+    api.delete<{ message: string; document_id: number }>(`/builder/project/document/${document_id}`),
 };
 
 // ── Rental ─────────────────────────────────────────
