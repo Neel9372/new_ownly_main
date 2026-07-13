@@ -15,6 +15,7 @@ const {
     getProjectDetails,
     completeMilestone,
     addProjectUpdate,
+    deleteProjectDocument,
 } = require("../controllers/builderController");
 
 // Builder verification
@@ -27,6 +28,7 @@ router.post("/project/:project_id/milestone", authMiddleware, addMilestone);
 router.get("/project/my", authMiddleware, getMyProjects);
 router.get("/project/:project_id", authMiddleware, getProjectDetails);
 router.post("/project/:project_id/update", authMiddleware, addProjectUpdate);
+router.delete("/project/document/:document_id", authMiddleware, deleteProjectDocument);
 
 // Admin routes
 router.get("/pending/builders", authMiddleware, requireAdmin, getPendingBuilders);       // ← ADD requireAdmin

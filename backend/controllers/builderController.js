@@ -498,3 +498,44 @@ exports.addProjectUpdate = async (req, res) => {
     res.status(500).json({ error: "Failed to add project update" });
   }
 };
+
+// Delete a document from project
+exports.deleteProjectDocument = async (req, res) => {
+  try {
+    const builder_id = req.user.id;
+    const role = req.user.role;
+    const { document_id } = req.params;
+
+    // Fetch document details and builder_id of the associated project
+    const docCheck = await db.query(
+      `SELECT pd.*, bp.builder_id 
+       FROM project_documents pd
+       JOIN builder_projects bp ON pd.project_id = bp.id
+       WHERE pd.id = $1`,
+      [document_id]
+    );
+
+    if (docCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    const doc = docCheck.rows[0];
+
+    // Authorize: Only admin or the associated builder can delete
+    if (role !== "ADMIN" && doc.builder_id !== builder_id) {
+      return res.status(403).json({ error: "Unauthorized to delete this document" });
+    }
+
+    // Delete the document row
+    await db.query(`DELETE FROM project_documents WHERE id = $1`, [document_id]);
+
+    res.json({
+      message: "Document deleted successfully",
+      document_id: doc.id
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete document" });
+  }
+};
