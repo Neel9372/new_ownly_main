@@ -20,12 +20,52 @@ export default function BuilderSection() {
   const [milestoneForm, setMilestoneForm] = useState({ project_id: 0, milestone_name: '', description: '', funding_percentage: '', due_date: '' });
   const [showMilestoneForm, setShowMilestoneForm] = useState<number | null>(null);
 
+  // Real data state for expanded projects
+  const [projectDetails, setProjectDetails] = useState<Record<number, { milestones: any[]; documents: any[] }>>({});
+  const [detailLoading, setDetailLoading] = useState<Record<number, boolean>>({});
+
   useEffect(() => { fetchProjects(); }, []);
 
   const fetchProjects = async () => {
     try { const res = await builderAPI.getPendingProjects(); setProjects(res.data.pending_projects || []); }
     catch { setProjects([]); }
     finally { setLoading(false); }
+  };
+
+  const fetchProjectDetails = async (id: number) => {
+    setDetailLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      const res = await builderAPI.getProjectDetails(id);
+      setProjectDetails(prev => ({
+        ...prev,
+        [id]: {
+          milestones: res.data.milestones || [],
+          documents: res.data.documents || []
+        }
+      }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDetailLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const handleToggleExpand = async (id: number) => {
+    if (expanded === id) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(id);
+    fetchProjectDetails(id);
+  };
+
+  const handleReleaseMilestone = async (projectId: number, milestoneId: number) => {
+    try {
+      await builderAPI.completeMilestone(milestoneId);
+      fetchProjectDetails(projectId);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleApprove = async (id: number) => {
@@ -53,6 +93,7 @@ export default function BuilderSection() {
         due_date: milestoneForm.due_date,
       });
       setShowMilestoneForm(null);
+      fetchProjectDetails(milestoneForm.project_id); // Refresh milestone list
       setMilestoneForm({ project_id: 0, milestone_name: '', description: '', funding_percentage: '', due_date: '' });
     } catch (e) { console.error(e); }
   };
@@ -107,52 +148,83 @@ export default function BuilderSection() {
                       <button onClick={() => { setRejectModal(proj.id); setRejectReason(''); }} className="btn-danger !py-2 !px-4 text-xs"><XCircle size={12} /> Reject</button>
                     </>
                   )}
-                  <button onClick={() => setExpanded(expanded === proj.id ? null : proj.id)} className="btn-outline !py-2 !px-4 text-xs"><Eye size={12} /> {expanded === proj.id ? 'Hide' : 'Details'}</button>
+                  <button onClick={() => handleToggleExpand(proj.id)} className="btn-outline !py-2 !px-4 text-xs"><Eye size={12} /> {expanded === proj.id ? 'Hide' : 'Details'}</button>
                 </div>
               </div>
 
               {/* Expanded: Milestones & Docs */}
               {expanded === proj.id && (
                 <div className="mt-6 pt-6 border-t border-[var(--border-card)]">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="uppercase-label-gold text-[10px]">MILESTONES & ESCROW RELEASES</span>
-                    <button onClick={() => { setShowMilestoneForm(proj.id); setMilestoneForm({ ...milestoneForm, project_id: proj.id }); }} className="text-xs text-[var(--gold)] font-semibold cursor-pointer bg-transparent border-none">+ Add Milestone</button>
-                  </div>
+                  {detailLoading[proj.id] ? (
+                    <div className="flex justify-center py-6">
+                      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }} />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* Milestones timeline */}
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="uppercase-label-gold text-[10px]">MILESTONES & ESCROW RELEASES</span>
+                          <button onClick={() => { setShowMilestoneForm(proj.id); setMilestoneForm({ ...milestoneForm, project_id: proj.id }); }} className="text-xs text-[var(--gold)] font-semibold cursor-pointer bg-transparent border-none">+ Add Milestone</button>
+                        </div>
 
-                  {showMilestoneForm === proj.id && (
-                    <form onSubmit={handleAddMilestone} className="ownly-card !bg-[var(--bg-input)] mb-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <div><label className="uppercase-label block mb-2 text-[10px]">Milestone Name</label><input value={milestoneForm.milestone_name} onChange={e => setMilestoneForm({ ...milestoneForm, milestone_name: e.target.value })} className="ownly-input" placeholder="Foundation Complete" required /></div>
-                        <div><label className="uppercase-label block mb-2 text-[10px]">Fund Release (%)</label><input value={milestoneForm.funding_percentage} onChange={e => setMilestoneForm({ ...milestoneForm, funding_percentage: e.target.value })} type="number" className="ownly-input" placeholder="20" required /></div>
-                        <div><label className="uppercase-label block mb-2 text-[10px]">Due Date</label><input value={milestoneForm.due_date} onChange={e => setMilestoneForm({ ...milestoneForm, due_date: e.target.value })} type="date" className="ownly-input" required /></div>
-                        <div><label className="uppercase-label block mb-2 text-[10px]">Description</label><input value={milestoneForm.description} onChange={e => setMilestoneForm({ ...milestoneForm, description: e.target.value })} className="ownly-input" placeholder="All foundation piling done" /></div>
+                        {showMilestoneForm === proj.id && (
+                          <form onSubmit={handleAddMilestone} className="ownly-card !bg-[var(--bg-input)] mb-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                              <div><label className="uppercase-label block mb-2 text-[10px]">Milestone Name</label><input value={milestoneForm.milestone_name} onChange={e => setMilestoneForm({ ...milestoneForm, milestone_name: e.target.value })} className="ownly-input" placeholder="Foundation Complete" required /></div>
+                              <div><label className="uppercase-label block mb-2 text-[10px]">Fund Release (%)</label><input value={milestoneForm.funding_percentage} onChange={e => setMilestoneForm({ ...milestoneForm, funding_percentage: e.target.value })} type="number" className="ownly-input" placeholder="20" required /></div>
+                              <div><label className="uppercase-label block mb-2 text-[10px]">Due Date</label><input value={milestoneForm.due_date} onChange={e => setMilestoneForm({ ...milestoneForm, due_date: e.target.value })} type="date" className="ownly-input" required /></div>
+                              <div><label className="uppercase-label block mb-2 text-[10px]">Description</label><input value={milestoneForm.description} onChange={e => setMilestoneForm({ ...milestoneForm, description: e.target.value })} className="ownly-input" placeholder="All foundation piling done" /></div>
+                            </div>
+                            <div className="flex gap-3"><button type="submit" className="btn-gold text-xs">Save Milestone</button><button type="button" onClick={() => setShowMilestoneForm(null)} className="btn-outline text-xs">Cancel</button></div>
+                          </form>
+                        )}
+
+                        <div className="space-y-3">
+                          {!projectDetails[proj.id]?.milestones || projectDetails[proj.id].milestones.length === 0 ? (
+                            <p className="text-xs text-[var(--text-muted)]">No milestones defined yet.</p>
+                          ) : (
+                            projectDetails[proj.id].milestones.map((ms: any) => (
+                              <div key={ms.id} className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-card)]" style={{ background: 'var(--bg-input)' }}>
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: ms.status === 'COMPLETED' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)' }}>
+                                  {ms.status === 'COMPLETED' ? <CheckCircle2 size={16} style={{ color: 'var(--green)' }} /> : <Clock size={16} style={{ color: 'var(--amber)' }} />}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-white">{ms.milestone_name}</div>
+                                  <div className="text-[10px] text-[var(--text-secondary)]">Releases {ms.funding_percentage}% of escrow · Due {new Date(ms.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                                </div>
+                                <div className="w-16 shrink-0"><ProgressBar percentage={ms.status === 'COMPLETED' ? 100 : 0} height={4} /></div>
+                                {ms.status === 'PENDING' && (
+                                  <button onClick={() => handleReleaseMilestone(proj.id, ms.id)} className="btn-outline !py-1.5 !px-3 text-[10px] cursor-pointer shrink-0" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Release Fund</button>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
-                      <div className="flex gap-3"><button type="submit" className="btn-gold text-xs">Save Milestone</button><button type="button" onClick={() => setShowMilestoneForm(null)} className="btn-outline text-xs">Cancel</button></div>
-                    </form>
+
+                      {/* Documents section */}
+                      <div>
+                        <span className="uppercase-label-gold text-[10px] block mb-4">PROJECT DOCUMENTS & RERA FILES</span>
+                        <div className="space-y-2">
+                          {!projectDetails[proj.id]?.documents || projectDetails[proj.id].documents.length === 0 ? (
+                            <p className="text-xs text-[var(--text-muted)]">No documents uploaded yet.</p>
+                          ) : (
+                            projectDetails[proj.id].documents.map((doc: any) => (
+                              <a key={doc.id} href={doc.document_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-[var(--border-card)] hover:border-[var(--gold)] transition-colors no-underline" style={{ background: 'var(--bg-input)' }}>
+                                <FileText size={16} className="text-[var(--gold)]" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-semibold text-white uppercase">{doc.document_type}</div>
+                                  <div className="text-[10px] text-[var(--text-muted)] truncate">{doc.document_url}</div>
+                                </div>
+                                <span className="text-[9px] uppercase text-[var(--text-secondary)]">{new Date(doc.uploaded_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+                              </a>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   )}
-
-                  {/* Sample milestone rows */}
-                  <div className="space-y-3">
-                    {[
-                      { name: 'Land Acquisition & Title Clear', pct: 15, status: 'COMPLETED', doc: true },
-                      { name: 'Foundation & Piling', pct: 20, status: 'PENDING', doc: true },
-                      { name: 'Structural (G+10)', pct: 25, status: 'PENDING', doc: false },
-                      { name: 'Finishing & Handover', pct: 40, status: 'PENDING', doc: false },
-                    ].map((ms, i) => (
-                      <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-card)]" style={{ background: 'var(--bg-input)' }}>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: ms.status === 'COMPLETED' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)' }}>
-                          {ms.status === 'COMPLETED' ? <CheckCircle2 size={16} style={{ color: 'var(--green)' }} /> : <Clock size={16} style={{ color: 'var(--amber)' }} />}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-white">{ms.name}</div>
-                          <div className="text-[10px] text-[var(--text-secondary)]">Releases {ms.pct}% of escrow</div>
-                        </div>
-                        <div className="w-24"><ProgressBar percentage={ms.status === 'COMPLETED' ? 100 : 0} height={4} /></div>
-                        {ms.doc ? <span className="text-[10px] text-[var(--green)]"><FileText size={12} className="inline" /> Doc ✓</span> : <span className="text-[10px] text-[var(--text-muted)]">No doc</span>}
-                        {ms.status === 'PENDING' && <button className="btn-outline !py-1.5 !px-3 text-[10px]" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Release Fund</button>}
-                      </div>
-                    ))}
-                  </div>
 
                   {proj.rejection_reason && (
                     <div className="mt-4 p-4 rounded-xl border border-[var(--red)]/30 bg-[var(--red)]/5">

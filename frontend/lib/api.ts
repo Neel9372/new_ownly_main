@@ -14,6 +14,7 @@ import type {
   Transaction,
   BuilderProject,
   RentalDistribution,
+  ProjectDetailsResponse,
 } from '@/types';
 
 const api = axios.create({
@@ -135,6 +136,15 @@ export const builderAPI = {
 
   reviewProject: (project_id: number, status: 'APPROVED' | 'REJECTED', rejection_reason?: string) =>
     api.patch(`/builder/review/project/${project_id}`, { status, rejection_reason }),
+
+  getProjectDetails: (project_id: number) =>
+    api.get<ProjectDetailsResponse>(`/builder/project/${project_id}`),
+
+  completeMilestone: (milestone_id: number) =>
+    api.patch<{ message: string; milestone: any }>(`/builder/milestone/${milestone_id}/complete`),
+
+  addProjectUpdate: (project_id: number, data: { title: string; description: string; photos_count?: number }) =>
+    api.post(`/builder/project/${project_id}/update`, data),
 };
 
 // ── Rental ─────────────────────────────────────────

@@ -265,7 +265,7 @@ exports.getMyProjects = async (req, res) => {
   }
 };
 
-// Admin - get all pending projects
+// Admin - get all pending & active builder projects
 exports.getPendingProjects = async (req, res) => {
   try {
     const result = await db.query(
@@ -277,7 +277,7 @@ exports.getPendingProjects = async (req, res) => {
        JOIN users u ON bp.builder_id = u.id
        LEFT JOIN project_documents pd ON bp.id = pd.project_id
        LEFT JOIN project_milestones pm ON bp.id = pm.project_id
-       WHERE bp.status = 'PENDING'
+       WHERE bp.status IN ('PENDING', 'APPROVED', 'LIVE', 'COMPLETED')
        GROUP BY bp.id, u.fname, u.lname, u.email, u.company_name
        ORDER BY bp.created_at ASC`
     );
@@ -342,8 +342,8 @@ if (status === "APPROVED") {
       property_id, total_tokens, token_price,
       total_tokens_remaining, funded_amount,
       funding_percentage, investor_count
-    ) VALUES ($1, $2, $3, $2, 0, 0, 0)`,
-    [property_id, project.total_tokens, project.token_price]
+    ) VALUES ($1, $2, $3, $4, 0, 0, 0)`,
+    [property_id, project.total_tokens, project.token_price, project.total_tokens]
   );
 }
 
@@ -355,5 +355,146 @@ if (status === "APPROVED") {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Project review failed" });
+  }
+};
+
+// Get detailed view of a builder project (milestones, documents, updates)
+exports.getProjectDetails = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const role = req.user.role;
+    const { project_id } = req.params;
+
+    const projectResult = await db.query(
+      `SELECT bp.*, u.company_name, u.fname, u.lname, u.email
+       FROM builder_projects bp
+       JOIN users u ON bp.builder_id = u.id
+       WHERE bp.id = $1`,
+      [project_id]
+    );
+
+    if (projectResult.rows.length === 0) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    const project = projectResult.rows[0];
+
+    // Restrict access: Only admins or the project's builder can view
+    if (role !== "ADMIN" && project.builder_id !== user_id) {
+      return res.status(403).json({ error: "Unauthorized access to project details" });
+    }
+
+    const milestones = await db.query(
+      `SELECT * FROM project_milestones WHERE project_id = $1 ORDER BY due_date ASC`,
+      [project_id]
+    );
+
+    const documents = await db.query(
+      `SELECT * FROM project_documents WHERE project_id = $1 ORDER BY uploaded_at DESC`,
+      [project_id]
+    );
+
+    const updates = await db.query(
+      `SELECT * FROM project_updates WHERE project_id = $1 ORDER BY created_at DESC`,
+      [project_id]
+    );
+
+    res.json({
+      project,
+      milestones: milestones.rows,
+      documents: documents.rows,
+      updates: updates.rows,
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch project details" });
+  }
+};
+
+// Admin completes/releases a milestone
+exports.completeMilestone = async (req, res) => {
+  try {
+    const { milestone_id } = req.params;
+
+    // Check if milestone exists
+    const msCheck = await db.query(
+      `SELECT * FROM project_milestones WHERE id = $1`,
+      [milestone_id]
+    );
+
+    if (msCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Milestone not found" });
+    }
+
+    const milestone = msCheck.rows[0];
+
+    if (milestone.status === "COMPLETED") {
+      return res.status(400).json({ error: "Milestone is already completed" });
+    }
+
+    // Update milestone status
+    const result = await db.query(
+      `UPDATE project_milestones 
+       SET status = 'COMPLETED', completed_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING *`,
+      [milestone_id]
+    );
+
+    res.json({
+      message: "Milestone marked as completed. Escrow tranche funds released.",
+      milestone: result.rows[0],
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to complete milestone" });
+  }
+};
+
+// Builder posts a site update
+exports.addProjectUpdate = async (req, res) => {
+  try {
+    const builder_id = req.user.id;
+    const { project_id } = req.params;
+    const { title, description, photos_count } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({ error: "Title and description are required" });
+    }
+
+    // Verify project belongs to this builder
+    const projectCheck = await db.query(
+      `SELECT id FROM builder_projects WHERE id = $1 AND builder_id = $2`,
+      [project_id, builder_id]
+    );
+
+    if (projectCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Project not found or unauthorized" });
+    }
+
+    const userCheck = await db.query(
+      `SELECT fname, lname, company_name FROM users WHERE id = $1`,
+      [builder_id]
+    );
+    const user = userCheck.rows[0];
+    const authorName = user.company_name || `${user.fname} ${user.lname}`;
+
+    const result = await db.query(
+      `INSERT INTO project_updates (project_id, author, title, description, photos_count)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [project_id, authorName, title, description, photos_count || 0]
+    );
+
+    res.json({
+      message: "Project update posted successfully",
+      update: result.rows[0],
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to add project update" });
   }
 };

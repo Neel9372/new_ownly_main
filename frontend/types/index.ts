@@ -306,3 +306,20 @@ export interface SignupPayload {
   company_name?: string;
   company_reg_id?: string;
 }
+
+export interface ProjectUpdate {
+  id: number;
+  project_id: number;
+  author: string;
+  title: string;
+  description: string;
+  photos_count: number;
+  created_at: string;
+}
+
+export interface ProjectDetailsResponse {
+  project: BuilderProject;
+  milestones: ProjectMilestone[];
+  documents: ProjectDocument[];
+  updates: ProjectUpdate[];
+}
