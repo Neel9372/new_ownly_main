@@ -150,7 +150,38 @@ export default function PropertiesSection() {
                   <div><label className="uppercase-label block mb-2">Leasing Strategy</label><select value={form.leasing_strategy} onChange={e => setForm({ ...form, leasing_strategy: e.target.value })} className="ownly-input"><option>Long-term</option><option>Short-term</option><option>Holiday rental</option></select></div>
                   <div><label className="uppercase-label block mb-2">Occupancy (%)</label><input value={form.occupancy_rate} onChange={e => setForm({ ...form, occupancy_rate: e.target.value })} placeholder="95" type="number" className="ownly-input" /></div>
                   <div><label className="uppercase-label block mb-2">Annual Rent (₹)</label><input value={form.projected_annual_rent} onChange={e => setForm({ ...form, projected_annual_rent: e.target.value })} placeholder="1739000" type="number" className="ownly-input" /></div>
-                  <div><label className="uppercase-label block mb-2">Image URL</label><input value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." className="ownly-input" /></div>
+                  <div>
+                    <label className="uppercase-label block mb-2">Property Image</label>
+                    <label 
+                      className="border border-dashed border-[var(--border-input)] rounded-xl p-2.5 text-center cursor-pointer transition-colors hover:border-[var(--gold)] block"
+                      style={{ background: 'var(--bg-input)' }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setForm({ ...form, image_url: reader.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      {form.image_url ? (
+                        <span className="text-xs text-[var(--gold)] font-medium truncate block max-w-[200px] mx-auto">
+                          ✓ Image Selected (Click to change)
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--text-secondary)]">
+                          📷 Upload Image File
+                        </span>
+                      )}
+                    </label>
+                  </div>
                   <div><label className="uppercase-label block mb-2">Investment Tag</label><select value={form.investment_tag} onChange={e => setForm({ ...form, investment_tag: e.target.value })} className="ownly-input"><option>High Yield</option><option>Value Add</option><option>Long Term</option><option>Pre-Construction</option></select></div>
                 </div>
               </div>

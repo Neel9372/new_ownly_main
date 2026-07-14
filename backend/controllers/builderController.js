@@ -37,7 +37,7 @@ exports.getPendingBuilders = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT id, fname, lname, email, company_name, rera_number, gst_number, 
-              website, portfolio_url, builder_status, created_at
+              website, portfolio_url, builder_status, license_url, created_at
        FROM users 
        WHERE role = 'BUILDER' AND builder_status = 'PENDING'
        ORDER BY created_at ASC`

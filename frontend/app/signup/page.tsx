@@ -1,25 +1,53 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SplitLayout from '@/components/SplitLayout';
 import InputField from '@/components/InputField';
 import GoldButton from '@/components/GoldButton';
 import { useAuth } from '@/context/AuthContext';
-import { CheckCircle2, Shield, Building2 } from 'lucide-react';
+import { CheckCircle2, Shield, Building2, UploadCloud, FileText } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
   const { signup } = useAuth();
   
+  const [role, setRole] = useState<'INVESTOR' | 'BUILDER'>('INVESTOR');
   const [fname, setFname] = useState('');
   const [lname, setLname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [licenseUrl, setLicenseUrl] = useState('');
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get('role');
+      if (roleParam === 'BUILDER') {
+        setRole('BUILDER');
+      } else {
+        setRole('INVESTOR');
+      }
+    }
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLicenseFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLicenseUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const calculateStrength = (pass: string) => {
     if (pass.length === 0) return { score: 0, label: '', color: '' };
@@ -56,10 +84,34 @@ export default function SignupPage() {
       return;
     }
 
+    if (role === 'BUILDER') {
+      if (!companyName.trim()) {
+        setError('Company Name is required for builders.');
+        return;
+      }
+      if (!licenseUrl) {
+        setError('Please upload a copy of your Builder License.');
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
-      await signup({ fname, lname, email, password, role: 'INVESTOR' });
-      router.push('/login'); // Redirect to login on success
+      await signup({ 
+        fname, 
+        lname, 
+        email, 
+        password, 
+        role, 
+        company_name: role === 'BUILDER' ? companyName : '',
+        license_url: role === 'BUILDER' ? licenseUrl : ''
+      });
+      
+      if (role === 'BUILDER') {
+        router.push('/login?role=BUILDER&signup_success=true');
+      } else {
+        router.push('/login');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
@@ -69,11 +121,36 @@ export default function SignupPage() {
 
   const leftContent = (
     <div>
-      <span className="uppercase-label-gold">/ 01 — MINT ACCOUNT</span>
-      <h2 className="font-heading font-bold text-4xl mt-3 mb-2 text-white">Become an owner.</h2>
-      <p className="text-sm mb-10" style={{ color: 'var(--text-secondary)' }}>
-        Already on OWNLY? <Link href="/login" className="no-underline" style={{ color: 'var(--gold)' }}>Sign in →</Link>
+      <span className="uppercase-label-gold">
+        {role === 'INVESTOR' ? '/ 01 — MINT ACCOUNT' : '/ 01 — REGISTER BUILDER'}
+      </span>
+      <h2 className="font-heading font-bold text-4xl mt-3 mb-2 text-white">
+        {role === 'INVESTOR' ? 'Become an owner.' : 'Build with us.'}
+      </h2>
+      <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+        Already registered? <Link href="/login" className="no-underline" style={{ color: 'var(--gold)' }}>Sign in →</Link>
       </p>
+
+      {/* Role selector tabs */}
+      <div className="flex gap-2 p-1.5 rounded-xl mb-8" style={{ background: 'var(--bg-input)', border: '1px solid var(--border-card)' }}>
+        {(['INVESTOR', 'BUILDER'] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => {
+              setRole(r);
+              setError('');
+            }}
+            className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold tracking-wider transition-all cursor-pointer border-none"
+            style={{
+              background: role === r ? 'var(--gold)' : 'transparent',
+              color: role === r ? '#000' : 'var(--text-secondary)',
+            }}
+          >
+            {r === 'INVESTOR' ? 'I\'M AN INVESTOR' : 'I\'M A BUILDER'}
+          </button>
+        ))}
+      </div>
 
       {error && (
         <div className="mb-6 p-3 rounded text-sm text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--red)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
@@ -96,10 +173,21 @@ export default function SignupPage() {
             required
           />
         </div>
+
+        {role === 'BUILDER' && (
+          <InputField
+            label="Company Name"
+            placeholder="e.g. Acme Properties Group"
+            value={companyName}
+            onChange={setCompanyName}
+            required
+          />
+        )}
         
         <InputField
           label="Email"
           type="email"
+          placeholder="you@company.com"
           value={email}
           onChange={setEmail}
           required
@@ -125,6 +213,38 @@ export default function SignupPage() {
           )}
         </div>
 
+        {role === 'BUILDER' && (
+          <div className="space-y-2">
+            <span className="uppercase-label block text-[10px] tracking-wider mb-2">Upload Builder License *</span>
+            <label 
+              className="border border-dashed border-[var(--border-input)] rounded-xl p-6 text-center cursor-pointer transition-colors hover:border-[var(--gold)] block"
+              style={{ background: 'var(--bg-input)' }}
+            >
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={handleFileChange}
+                required
+              />
+              {licenseFile ? (
+                <div className="flex items-center justify-center gap-3">
+                  <FileText size={20} style={{ color: 'var(--gold)' }} />
+                  <div className="text-left">
+                    <p className="text-xs text-white font-medium">{licenseFile.name}</p>
+                    <p className="text-[9px] text-[var(--text-secondary)]">{(licenseFile.size / 1024).toFixed(0)} KB · Replace</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-3">
+                  <UploadCloud size={20} style={{ color: 'var(--text-muted)' }} />
+                  <p className="text-xs text-[var(--text-secondary)]">📄 Upload license (PAN, RERA, registration, etc.)</p>
+                </div>
+              )}
+            </label>
+          </div>
+        )}
+
         <div className="pt-3">
           <label className="flex items-start gap-3 cursor-pointer">
             <input 
@@ -135,13 +255,16 @@ export default function SignupPage() {
               style={{ accentColor: 'var(--gold)', background: 'var(--bg-input)', border: '1px solid var(--border-input)' }} 
             />
             <span className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              I'm 18+ and agree to the Terms, Privacy Policy, and the SEBI-sandbox investor disclosures. KYC required before first investment.
+              {role === 'INVESTOR' 
+                ? "I'm 18+ and agree to the Terms, Privacy Policy, and the SEBI-sandbox investor disclosures. KYC required before first investment."
+                : "I certify that I am authorized to represent this builder company and the documents/details provided are authentic."
+              }
             </span>
           </label>
         </div>
 
         <GoldButton type="submit" fullWidth className="mt-8 !py-3.5" disabled={isLoading}>
-          {isLoading ? 'Minting...' : '✦ Mint my account →'}
+          {isLoading ? 'Registering...' : role === 'INVESTOR' ? '✦ Mint my account →' : '✦ Submit registration →'}
         </GoldButton>
       </form>
     </div>

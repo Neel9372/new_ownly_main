@@ -306,6 +306,7 @@ export interface SignupPayload {
   role?: string;
   company_name?: string;
   company_reg_id?: string;
+  license_url?: string;
 }
 
 export interface ProjectUpdate {

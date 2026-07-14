@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, TrendingUp } from 'lucide-react';
@@ -15,31 +15,64 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   
+  const [selectedRole, setSelectedRole] = useState<'USER' | 'BUILDER' | 'ADMIN'>('USER');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get('role');
+      if (roleParam === 'BUILDER') {
+        setSelectedRole('BUILDER');
+      } else if (roleParam === 'ADMIN') {
+        setSelectedRole('ADMIN');
+      }
+      if (params.get('signup_success') === 'true') {
+        setError('Registration request submitted. Admin will verify your license shortly!');
+      }
+    }
+  }, []);
+ 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+ 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Invalid email address format.');
       return;
     }
-
+ 
     const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!passRegex.test(password)) {
       setError('Invalid password format.');
       return;
     }
-
+ 
     setIsLoading(true);
     try {
       const user = await login(email, password);
       
+      // Enforce role check based on selected tab
+      if (selectedRole === 'ADMIN' && user.role !== 'ADMIN') {
+        setError('This account does not have Admin privileges.');
+        setIsLoading(false);
+        return;
+      }
+      if (selectedRole === 'BUILDER' && user.role !== 'BUILDER') {
+        setError('This account is not registered as a Builder.');
+        setIsLoading(false);
+        return;
+      }
+      if (selectedRole === 'USER' && user.role !== 'INVESTOR') {
+        setError('This is not an Investor account. Please select the correct login option.');
+        setIsLoading(false);
+        return;
+      }
+
       if (user.role === 'ADMIN') {
         router.push('/admin');
       } else if (user.role === 'BUILDER') {
@@ -53,7 +86,7 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
+ 
   const leftContent = (
     <div>
       <span className="uppercase-label-gold">/ WELCOME BACK</span>
@@ -65,7 +98,7 @@ export default function LoginPage() {
       <p className="text-sm leading-relaxed mb-12" style={{ color: 'var(--text-secondary)' }}>
         Sign in to track your fractional positions, claim rental yield, and queue your next exit window — all from one obsidian dash.
       </p>
-
+ 
       {/* Mini NAV Card */}
       <div className="ownly-card !p-6 relative overflow-hidden" style={{ background: '#0D0D0D' }}>
         <div className="flex items-center gap-2.5 mb-3">
@@ -96,21 +129,62 @@ export default function LoginPage() {
       </div>
     </div>
   );
-
+ 
   const rightContent = (
     <div>
-      <span className="uppercase-label-gold">/ 01 — SIGN IN</span>
-      <h2 className="font-heading font-bold text-3xl mt-3 mb-2 text-white">Open your vault</h2>
-      <p className="text-sm mb-10" style={{ color: 'var(--text-secondary)' }}>
-        New to OWNLY? <Link href="/signup" className="no-underline" style={{ color: 'var(--gold)' }}>Mint your account →</Link>
+      <span className="uppercase-label-gold">
+        {selectedRole === 'USER' && '/ 01 — SIGN IN AS INVESTOR'}
+        {selectedRole === 'BUILDER' && '/ 01 — SIGN IN AS BUILDER'}
+        {selectedRole === 'ADMIN' && '/ 01 — RESTRICTED ADMIN ACCESS'}
+      </span>
+      
+      <h2 className="font-heading font-bold text-3xl mt-3 mb-2 text-white">
+        {selectedRole === 'USER' && 'Open your vault'}
+        {selectedRole === 'BUILDER' && 'Builder Portal'}
+        {selectedRole === 'ADMIN' && 'Control Console'}
+      </h2>
+
+      <p className="text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>
+        {selectedRole === 'USER' && (
+          <>
+            New to OWNLY? <Link href="/signup?role=INVESTOR" className="no-underline" style={{ color: 'var(--gold)' }}>Mint your account →</Link>
+          </>
+        )}
+        {selectedRole === 'BUILDER' && (
+          <>
+            New Builder? <Link href="/signup?role=BUILDER" className="no-underline" style={{ color: 'var(--gold)' }}>Register your company →</Link>
+          </>
+        )}
+        {selectedRole === 'ADMIN' && 'Admin authorization check. No registration option.'}
       </p>
+ 
+      {/* Role Tabs */}
+      <div className="flex gap-2 p-1.5 rounded-xl mb-8" style={{ background: 'var(--bg-input)', border: '1px solid var(--border-card)' }}>
+        {(['USER', 'BUILDER', 'ADMIN'] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => {
+              setSelectedRole(r);
+              setError('');
+            }}
+            className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold tracking-wider transition-all cursor-pointer border-none"
+            style={{
+              background: selectedRole === r ? 'var(--gold)' : 'transparent',
+              color: selectedRole === r ? '#000' : 'var(--text-secondary)',
+            }}
+          >
+            {r === 'USER' ? 'INVESTOR' : r}
+          </button>
+        ))}
+      </div>
 
       {error && (
         <div className="mb-6 p-3 rounded text-sm text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--red)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
           {error}
         </div>
       )}
-
+ 
       <form onSubmit={handleLogin} className="space-y-6">
         <InputField
           label="Email"
@@ -131,7 +205,7 @@ export default function LoginPage() {
           icon={Lock}
           required
         />
-
+ 
         <div className="flex items-center justify-between mt-3">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" className="rounded" style={{ accentColor: 'var(--gold)', background: 'var(--bg-input)', border: '1px solid var(--border-input)' }} />
@@ -139,18 +213,18 @@ export default function LoginPage() {
           </label>
           <a href="#" className="text-xs no-underline" style={{ color: 'var(--text-secondary)' }}>Forgot password?</a>
         </div>
-
+ 
         <GoldButton type="submit" fullWidth className="mt-8 !text-base !py-3.5" disabled={isLoading}>
           {isLoading ? 'Authenticating...' : 'Enter vault →'}
         </GoldButton>
       </form>
-
+ 
       <div className="flex items-center gap-4 my-10">
         <div className="flex-1 h-px" style={{ background: 'var(--border-card)' }}></div>
         <span className="uppercase-label text-[10px]">OR</span>
         <div className="flex-1 h-px" style={{ background: 'var(--border-card)' }}></div>
       </div>
-
+ 
       <div className="flex gap-5">
         <OutlineButton className="flex-1 justify-center">
           ⊙ Wallet
@@ -159,7 +233,7 @@ export default function LoginPage() {
           ⬡ Passkey
         </OutlineButton>
       </div>
-
+ 
       <p className="text-[10px] text-center mt-10 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
         By continuing you agree to OWNLY's Terms & Privacy Policy. KYC required before first investment.
       </p>

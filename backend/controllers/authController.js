@@ -7,7 +7,7 @@ exports.signup = async (req, res) => {
   try {
     const {
       fname, mname, lname, email, password, role,
-      company_name, company_reg_id  // ← ADD THESE
+      company_name, company_reg_id, license_url  // ← ADD THESE
     } = req.body;
 
     if (!fname || !lname || !email || !password) {
@@ -15,13 +15,14 @@ exports.signup = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const builder_status = role === "BUILDER" ? "PENDING" : "NOT_APPLICABLE";
 
     const result = await db.query(
-      `INSERT INTO users (fname, mname, lname, email, password, role, company_name, company_reg_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, fname, lname, email, role, kyc_status, wallet_status`,
+      `INSERT INTO users (fname, mname, lname, email, password, role, company_name, company_reg_id, builder_status, license_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, fname, lname, email, role, builder_status, kyc_status, wallet_status`,
       [fname, mname || null, lname, email, hashedPassword, role || "INVESTOR",
-        company_name || null, company_reg_id || null]  // ← ADD THESE
+        company_name || null, company_reg_id || null, builder_status, role === "BUILDER" ? license_url || null : null]  // ← ADD THESE
     );
 
     res.json({ message: "Account created successfully", user: result.rows[0] });
@@ -59,6 +60,16 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: "Invalid password" });
     }
 
+    // Check builder approval status
+    if (user.role === "BUILDER") {
+      if (user.builder_status === "PENDING") {
+        return res.status(403).json({ error: "Your account is pending verification. Please wait for admin approval." });
+      }
+      if (user.builder_status === "REJECTED") {
+        return res.status(403).json({ error: "Your registration request was rejected by the admin." });
+      }
+    }
+
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
@@ -77,6 +88,7 @@ exports.login = async (req, res) => {
         wallet_status: user.wallet_status,
         kyc_status: user.kyc_status,
         kyc_rejection_reason: user.kyc_rejection_reason,
+        builder_status: user.builder_status,
       },
     });
 

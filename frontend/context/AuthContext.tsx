@@ -13,6 +13,8 @@ interface AuthUser {
   wallet_status: string;
   kyc_status: string;
   kyc_rejection_reason?: string;
+  builder_status?: string;
+  company_name?: string;
 }
 
 interface AuthContextType {
@@ -75,6 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: data.password,
       mname: data.mname,
       role: data.role,
+      company_name: data.company_name,
+      license_url: data.license_url,
     });
   };
 

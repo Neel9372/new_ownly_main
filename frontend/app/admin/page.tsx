@@ -17,9 +17,11 @@ import InvestorsSection from './sections/InvestorsSection';
 import TokensSection from './sections/TokensSection';
 import ExitWindowsSection from './sections/ExitWindowsSection';
 import PoolsSection from './sections/PoolsSection';
+import BuilderApprovalsSection from './sections/BuilderApprovalsSection';
 
 const TABS = [
   { id: 'kyc', label: 'KYC', icon: ShieldCheck },
+  { id: 'builder-approvals', label: 'Builder Approvals', icon: ShieldCheck },
   { id: 'properties', label: 'Properties', icon: Building2 },
   { id: 'builders', label: 'Builder Projects', icon: FolderKanban },
   { id: 'investors', label: 'Investors', icon: Users },
@@ -83,6 +85,7 @@ export default function AdminPage() {
 
       {/* ═══════════ TAB CONTENT ═══════════ */}
       {activeTab === 'kyc' && <KYCSection />}
+      {activeTab === 'builder-approvals' && <BuilderApprovalsSection />}
       {activeTab === 'properties' && <PropertiesSection />}
       {activeTab === 'builders' && <BuilderSection />}
       {activeTab === 'investors' && <InvestorsSection />}
