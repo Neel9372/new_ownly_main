@@ -22,6 +22,8 @@ export default function BuilderApprovalsSection() {
   const [search, setSearch] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [viewLicense, setViewLicense] = useState<string | null>(null);
+  const [rejectModal, setRejectModal] = useState<{ id: number; name: string } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     fetchPendingBuilders();
@@ -52,11 +54,13 @@ export default function BuilderApprovalsSection() {
     }
   };
 
-  const handleReject = async (id: number) => {
+  const handleReject = async (id: number, reason: string) => {
     setActionLoading(id);
     try {
-      await builderAPI.reviewBuilder(id, 'REJECTED');
+      await builderAPI.reviewBuilder(id, 'REJECTED', reason);
       setBuilders((prev) => prev.filter((b) => b.id !== id));
+      setRejectModal(null);
+      setRejectionReason('');
     } catch (err) {
       console.error('Failed to reject builder:', err);
     } finally {
@@ -174,7 +178,10 @@ export default function BuilderApprovalsSection() {
                         <CheckCircle2 size={12} /> Approve
                       </button>
                       <button
-                        onClick={() => handleReject(b.id)}
+                        onClick={() => {
+                          setRejectModal({ id: b.id, name: `${b.fname} ${b.lname}` });
+                          setRejectionReason('');
+                        }}
                         disabled={actionLoading === b.id}
                         className="btn-danger !py-1.5 !px-3 text-xs"
                       >
@@ -186,6 +193,68 @@ export default function BuilderApprovalsSection() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Rejection Reason Modal */}
+      {rejectModal !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setRejectModal(null)}
+        >
+          <div
+            className="ownly-card w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-5">
+              <span className="uppercase-label-gold text-xs">Reject Builder Registration</span>
+              <button
+                onClick={() => setRejectModal(null)}
+                className="text-xs text-[var(--text-secondary)] hover:text-white bg-transparent border-none cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <p className="text-sm text-[var(--text-secondary)] mb-1">
+              Rejecting <strong className="text-white">{rejectModal.name}</strong>. An email will be sent to the builder with your reason.
+            </p>
+
+            <div className="mt-4">
+              <label className="uppercase-label block text-[10px] tracking-wider mb-2">
+                Reason for Rejection <span style={{ color: 'var(--red)' }}>*</span>
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="e.g. Documents submitted are unclear or incomplete. Please re-upload a valid RERA certificate and GST registration."
+                rows={4}
+                className="ownly-input w-full !rounded-lg resize-none text-sm"
+                style={{ fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <div className="flex gap-3 mt-6 justify-end">
+              <button
+                onClick={() => setRejectModal(null)}
+                className="btn-outline !py-2 !px-4 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!rejectionReason.trim()) return;
+                  handleReject(rejectModal.id, rejectionReason.trim());
+                }}
+                disabled={!rejectionReason.trim() || actionLoading === rejectModal.id}
+                className="btn-danger !py-2 !px-4 text-xs"
+                style={{ opacity: !rejectionReason.trim() ? 0.5 : 1 }}
+              >
+                {actionLoading === rejectModal.id ? 'Sending...' : '✕ Confirm Rejection & Send Email'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

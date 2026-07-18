@@ -1,4 +1,5 @@
 const db = require("../db");
+const { sendBuilderApprovalEmail, sendBuilderRejectionEmail } = require("../service/emailService");
 
 // Builder submits verification request
 exports.submitVerification = async (req, res) => {
@@ -55,7 +56,7 @@ exports.getPendingBuilders = async (req, res) => {
 exports.reviewBuilder = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, rejection_reason } = req.body;
 
     if (!["VERIFIED", "REJECTED"].includes(status)) {
       return res.status(400).json({ error: "Status must be VERIFIED or REJECTED" });
@@ -71,9 +72,24 @@ exports.reviewBuilder = async (req, res) => {
       return res.status(404).json({ error: "Builder not found" });
     }
 
+    const builder = result.rows[0];
+
+    // Send email notification asynchronously (don't block the response)
+    if (status === "VERIFIED") {
+      sendBuilderApprovalEmail(builder.email, builder.fname, builder.company_name)
+        .catch((err) => console.error("Failed to send approval email:", err.message));
+    } else if (status === "REJECTED") {
+      sendBuilderRejectionEmail(
+        builder.email,
+        builder.fname,
+        builder.company_name,
+        rejection_reason || ""
+      ).catch((err) => console.error("Failed to send rejection email:", err.message));
+    }
+
     res.json({
       message: `Builder ${status.toLowerCase()} successfully`,
-      builder: result.rows[0],
+      builder,
     });
 
   } catch (err) {
