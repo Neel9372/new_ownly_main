@@ -128,8 +128,8 @@ export const builderAPI = {
   getPendingBuilders: () =>
     api.get('/builder/pending/builders'),
 
-  reviewBuilder: (id: number, status: 'VERIFIED' | 'REJECTED', rejection_reason?: string) =>
-    api.patch(`/builder/review/builder/${id}`, { status, rejection_reason }),
+  reviewBuilder: (id: number, status: 'VERIFIED' | 'REJECTED') =>
+    api.patch(`/builder/review/builder/${id}`, { status }),
 
   getPendingProjects: () =>
     api.get<{ pending_projects: BuilderProject[] }>('/builder/pending/projects'),
